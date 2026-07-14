@@ -22,11 +22,17 @@ export function LoginForm() {
     event.preventDefault()
 
     const errors: FieldErrors = {}
-    if (!username.trim()) errors.username = 'Username is required'
-    if (!password) errors.password = 'Password is required'
+    if (!username.trim()) {
+      errors.username = 'Username is required'
+    }
+    if (!password) {
+      errors.password = 'Password is required'
+    }
     setFieldErrors(errors)
 
-    if (Object.keys(errors).length > 0) return
+    if (Object.keys(errors).length > 0) {
+      return
+    }
 
     setApiError(null)
     setIsSubmitting(true)
