@@ -1,4 +1,4 @@
-# Prompt: Authenticated Layout (Header/Footer)
+# Prompt: Layout (Header/Footer)
 
 What this produces: a shared layout wrapping all authenticated pages
 (dashboard and anything added later). Does not apply to the login page, which stays standalone. Assumes project-wide
