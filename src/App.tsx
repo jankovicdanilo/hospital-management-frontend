@@ -4,6 +4,8 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import PatientsPage from './pages/PatientsPage';
 import PatientFormPage from './pages/PatientFormPage';
+import DoctorsPage from './pages/DoctorsPage';
+import DoctorFormPage from './pages/DoctorFormPage';
 import AuthLayout from './components/AuthLayout';
 
 function App() {
@@ -17,6 +19,9 @@ function App() {
             <Route path="/patients" element={<PatientsPage />} />
             <Route path="/patients/new" element={<PatientFormPage />} />
             <Route path="/patients/:id/edit" element={<PatientFormPage />} />
+            <Route path="/doctors" element={<DoctorsPage />} />
+            <Route path="/doctors/new" element={<DoctorFormPage />} />
+            <Route path="/doctors/:id/edit" element={<DoctorFormPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
