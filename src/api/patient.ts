@@ -1,0 +1,102 @@
+import type {
+  ApiErrorResponse,
+  PatientCreateRequestDto,
+  PatientCreateResponseDto,
+  PatientGetByIdDto,
+  PatientListDto,
+  PatientUpdateRequestDto,
+  PatientUpdateResponseDto,
+} from '../types/patient';
+
+const QUERY_BASE_URL = import.meta.env.VITE_QUERY_SERVICE_SERVICE_URL as string;
+const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_SERVICE_SERVICE_URL as string;
+
+export class ApiError extends Error {
+  readonly errorCode: string;
+  readonly errors?: Record<string, string[]>;
+
+  constructor(message: string, errorCode: string, errors?: Record<string, string[]>) {
+    super(message);
+    this.name = 'ApiError';
+    this.errorCode = errorCode;
+    this.errors = errors;
+  }
+}
+
+async function throwApiError(response: Response): Promise<never> {
+  const body: ApiErrorResponse = await response.json();
+  throw new ApiError(body.message, body.errorCode, body.errors);
+}
+
+function authHeaders(token: string): HeadersInit {
+  return { Authorization: `Bearer ${token}` };
+}
+
+export async function getPatients(token: string): Promise<PatientListDto[]> {
+  const response = await fetch(`${QUERY_BASE_URL}/api/patient`, {
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<PatientListDto[]>;
+}
+
+export async function getPatientById(id: number, token: string): Promise<PatientGetByIdDto> {
+  const response = await fetch(`${QUERY_BASE_URL}/api/patient/${id}`, {
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<PatientGetByIdDto>;
+}
+
+export async function createPatient(
+  data: PatientCreateRequestDto,
+  token: string,
+): Promise<PatientCreateResponseDto> {
+  const response = await fetch(`${COMMAND_BASE_URL}/api/patient`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<PatientCreateResponseDto>;
+}
+
+export async function updatePatient(
+  data: PatientUpdateRequestDto,
+  token: string,
+): Promise<PatientUpdateResponseDto> {
+  const response = await fetch(`${COMMAND_BASE_URL}/api/patient`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<PatientUpdateResponseDto>;
+}
+
+export async function deletePatient(id: number, token: string): Promise<void> {
+  const response = await fetch(`${COMMAND_BASE_URL}/api/patient/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+}
