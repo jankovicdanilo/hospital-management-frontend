@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ApiError, createPatient, getPatientById, updatePatient } from '../api/patient';
+import { createPatient, getPatientById, updatePatient } from '../api/patient';
+import { ApiError } from '../api/apiErrors';
 
 interface FormState {
   name: string;

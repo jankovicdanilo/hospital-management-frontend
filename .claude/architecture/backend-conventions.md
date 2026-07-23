@@ -22,23 +22,6 @@ Status code indicates the category (404 not found, 409 conflict,
 "errors": { "<FieldName>": ["<message>", ...], ... }
 }
 
-## Error class shape
-
-Throw API errors as a custom `ApiError` extending `Error`. Use explicit
-property declarations, not TypeScript parameter properties:
-
-class ApiError extends Error {
-readonly errorCode: string;
-readonly errors?: Record<string, string[]>;
-
-constructor(message: string, errorCode: string, errors?: Record<string, string[]>) {
-super(message);
-this.name = 'ApiError';
-this.errorCode = errorCode;
-this.errors = errors;
-}
-}
-
 ## Success responses
 
 - Endpoints returning a resource (GET, POST, PUT) return the
@@ -78,3 +61,8 @@ If you find two files disagreeing (e.g. an env var name, a type shape,
 a route path), do not silently resolve it by picking one side. Flag
 the discrepancy and ask which one is correct — don't assume the older
 or "example" file is the source of truth.
+
+## Shared API client code
+
+ApiError, throwApiError, and authHeaders live in src/api/apiErrors.ts —
+import them from there. Do not redefine them per-feature file.
