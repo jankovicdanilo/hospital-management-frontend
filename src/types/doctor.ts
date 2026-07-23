@@ -23,9 +23,3 @@ export interface DoctorUpdateRequestDto {
   email: string;
   phone?: string;
 }
-
-export interface ApiErrorResponse {
-  message: string;
-  errorCode: string;
-  errors?: Record<string, string[]>;
-}
