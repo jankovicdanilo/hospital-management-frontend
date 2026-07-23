@@ -50,9 +50,3 @@ export interface PatientUpdateResponseDto {
   email: string;
   phone?: string;
 }
-
-export interface ApiErrorResponse {
-  message: string;
-  errorCode: string;
-  errors?: Record<string, string[]>;
-}
