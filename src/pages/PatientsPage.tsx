@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deletePatient, getPatients } from '../api/patient';
 import type { PatientListDto } from '../types/patient';
+import DataTable from '../components/DataTable';
 
 function formatDate(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
@@ -20,22 +21,26 @@ export default function PatientsPage() {
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<PatientListDto | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const pageSize = 1;
+  const [totalCount, setTotalCount] = useState(0);
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await getPatients(user!.token);
-      setPatients(data);
+      const data = await getPatients(pageNumber, pageSize, user!.token);
+      setPatients(data.items);
+      setTotalCount((data.totalCount))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, pageNumber]);
 
   useEffect(() => {
-    loadPatients();
+    void loadPatients();
   }, [loadPatients]);
 
   async function handleConfirmDelete() {
@@ -77,54 +82,35 @@ export default function PatientsPage() {
         </div>
       )}
 
-      <div className="rounded-2xl bg-white shadow-md overflow-hidden">
-        {loading ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">Loading patients…</div>
-        ) : patients.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">No patients found.</div>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-3 font-medium text-gray-500">Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Last Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Email</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Phone</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Date of Birth</th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {patients.map((patient) => (
-                <tr key={patient.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-800">{patient.name}</td>
-                  <td className="px-6 py-4 text-gray-800">{patient.lastName}</td>
-                  <td className="px-6 py-4 text-gray-600">{patient.email}</td>
-                  <td className="px-6 py-4 text-gray-600">{patient.phone ?? '—'}</td>
-                  <td className="px-6 py-4 text-gray-600">{formatDate(patient.dateOfBirth)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        to={`/patients/${patient.id}/edit`}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setPendingDelete(patient)}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+          columns={[
+            { header: 'Name', render: (p) => p.name },
+            { header: 'Last Name', render: (p) => p.lastName },
+            { header: 'Email', render: (p) => p.email },
+            { header: 'Phone', render: (p) => p.phone ?? '—' },
+            { header: 'Date of Birth', render: (p) => formatDate(p.dateOfBirth) },
+          ]}
+          rows={patients}
+          rowKey={(p) => p.id}
+          loading={loading}
+          emptyMessage="No patients found."
+          actions={(p) => (
+              <>
+                <Link to={`/patients/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  Edit
+                </Link>
+                <button type="button" onClick={() => setPendingDelete(p)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                  Delete
+                </button>
+              </>
+          )}
+          pagination={{
+            pageNumber,
+            pageSize,
+            totalCount,
+            onPageChange: setPageNumber,
+          }}
+      />
 
       {pendingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
