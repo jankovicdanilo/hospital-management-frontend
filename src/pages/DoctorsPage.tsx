@@ -4,6 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { deleteDoctor, getDoctors } from '../api/doctor';
 import type { DoctorResponseDto } from '../types/doctor';
 import DataTable from '../components/DataTable';
+import Avatar from '../components/Avatar';
+import Badge from '../components/Badge';
+import StatCard from '../components/StatCard';
 
 export default function DoctorsPage() {
   const { user } = useAuth();
@@ -73,11 +76,36 @@ export default function DoctorsPage() {
         </div>
       )}
 
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <StatCard label="Total Doctors" value={totalCount} />
+        <StatCard
+          label="Showing"
+          value={
+            totalCount === 0
+              ? '0 of 0'
+              : `${(pageNumber - 1) * pageSize + 1}–${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount}`
+          }
+        />
+      </div>
+
       <DataTable
           columns={[
-            { header: 'First Name', render: (d) => d.firstName ?? '—' },
-            { header: 'Last Name', render: (d) => d.lastName ?? '—' },
-            { header: 'Specialization', render: (d) => d.specialization ?? '—' },
+            {
+              header: 'Doctor',
+              render: (d) => (
+                <div className="flex items-center gap-3">
+                  <Avatar name={`${d.firstName ?? ''} ${d.lastName ?? ''}`} />
+                  <span className="font-medium text-gray-800">
+                    {d.firstName ?? '—'} {d.lastName ?? ''}
+                  </span>
+                </div>
+              ),
+            },
+            {
+              header: 'Specialization',
+              render: (d) =>
+                d.specialization ? <Badge color="blue">{d.specialization}</Badge> : '—',
+            },
             { header: 'Email', render: (d) => d.email ?? '—' },
             { header: 'Phone', render: (d) => d.phone ?? '—' },
           ]}

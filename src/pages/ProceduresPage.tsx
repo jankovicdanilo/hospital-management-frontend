@@ -4,9 +4,21 @@ import { useAuth } from '../context/AuthContext';
 import { deleteProcedure, getProcedures } from '../api/procedure';
 import type { ProcedureListDto } from '../types/procedure';
 import DataTable from '../components/DataTable';
+import Badge from '../components/Badge';
+import StatCard from '../components/StatCard';
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(price);
+}
+
+function priceTier(price: number): { label: string; color: 'green' | 'amber' | 'red' } {
+  if (price < 100) {
+    return { label: 'Standard', color: 'green' };
+  }
+  if (price < 300) {
+    return { label: 'Elevated', color: 'amber' };
+  }
+  return { label: 'Premium', color: 'red' };
 }
 
 export default function ProceduresPage() {
@@ -77,10 +89,29 @@ export default function ProceduresPage() {
         </div>
       )}
 
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <StatCard label="Total Procedures" value={totalCount} />
+        <StatCard
+          label="Showing"
+          value={
+            totalCount === 0
+              ? '0 of 0'
+              : `${(pageNumber - 1) * pageSize + 1}–${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount}`
+          }
+        />
+      </div>
+
       <DataTable
           columns={[
             { header: 'Name', render: (p) => p.name },
             { header: 'Price', render: (p) => formatPrice(p.price) },
+            {
+              header: 'Tier',
+              render: (p) => {
+                const tier = priceTier(p.price);
+                return <Badge color={tier.color}>{tier.label}</Badge>;
+              },
+            },
           ]}
           rows={procedures}
           rowKey={(p) => p.id}

@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { deletePatient, getPatients } from '../api/patient';
 import type { PatientListDto } from '../types/patient';
 import DataTable from '../components/DataTable';
+import Avatar from '../components/Avatar';
+import StatCard from '../components/StatCard';
 
 function formatDate(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
@@ -82,10 +84,31 @@ export default function PatientsPage() {
         </div>
       )}
 
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <StatCard label="Total Patients" value={totalCount} />
+        <StatCard
+          label="Showing"
+          value={
+            totalCount === 0
+              ? '0 of 0'
+              : `${(pageNumber - 1) * pageSize + 1}–${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount}`
+          }
+        />
+      </div>
+
       <DataTable
           columns={[
-            { header: 'Name', render: (p) => p.name },
-            { header: 'Last Name', render: (p) => p.lastName },
+            {
+              header: 'Patient',
+              render: (p) => (
+                <div className="flex items-center gap-3">
+                  <Avatar name={`${p.name} ${p.lastName}`} />
+                  <span className="font-medium text-gray-800">
+                    {p.name} {p.lastName}
+                  </span>
+                </div>
+              ),
+            },
             { header: 'Email', render: (p) => p.email },
             { header: 'Phone', render: (p) => p.phone ?? '—' },
             { header: 'Date of Birth', render: (p) => formatDate(p.dateOfBirth) },
