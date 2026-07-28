@@ -22,7 +22,7 @@ export default function PatientsPage() {
   const [pendingDelete, setPendingDelete] = useState<PatientListDto | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
-  const pageSize = 1;
+  const pageSize = 5;
   const [totalCount, setTotalCount] = useState(0);
 
   const loadPatients = useCallback(async () => {

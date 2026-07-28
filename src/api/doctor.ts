@@ -8,8 +8,8 @@ import { throwApiError, authHeaders } from './apiErrors';
 const QUERY_BASE_URL = import.meta.env.VITE_QUERY_SERVICE_SERVICE_URL as string;
 const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_SERVICE_SERVICE_URL as string;
 
-export async function getDoctors(token: string): Promise<DoctorResponseDto[]> {
-  const response = await fetch(`${QUERY_BASE_URL}/api/doctor`, {
+export async function getDoctors(pageNumber: number, pageSize: number, token: string): Promise<{ items: DoctorResponseDto[]; totalCount: number }> {
+  const response = await fetch(`${QUERY_BASE_URL}/api/doctor?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
     headers: authHeaders(token),
   });
 
@@ -17,7 +17,7 @@ export async function getDoctors(token: string): Promise<DoctorResponseDto[]> {
     return throwApiError(response);
   }
 
-  return response.json() as Promise<DoctorResponseDto[]>;
+  return response.json() as Promise<{ items: DoctorResponseDto[]; totalCount: number }>;
 }
 
 export async function getDoctorById(id: number, token: string): Promise<DoctorResponseDto> {

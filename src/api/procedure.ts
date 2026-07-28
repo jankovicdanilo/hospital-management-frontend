@@ -11,8 +11,8 @@ import { throwApiError, authHeaders } from './apiErrors';
 const QUERY_BASE_URL = import.meta.env.VITE_QUERY_SERVICE_SERVICE_URL as string;
 const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_SERVICE_SERVICE_URL as string;
 
-export async function getProcedures(token: string): Promise<ProcedureListDto[]> {
-  const response = await fetch(`${QUERY_BASE_URL}/api/procedure`, {
+export async function getProcedures(pageNumber: number, pageSize: number, token: string): Promise<{ items: ProcedureListDto[]; totalCount: number }> {
+  const response = await fetch(`${QUERY_BASE_URL}/api/procedure?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
     headers: authHeaders(token),
   });
 
@@ -20,7 +20,7 @@ export async function getProcedures(token: string): Promise<ProcedureListDto[]> 
     return throwApiError(response);
   }
 
-  return response.json() as Promise<ProcedureListDto[]>;
+  return response.json() as Promise<{ items: ProcedureListDto[]; totalCount: number }>;
 }
 
 export async function getProcedureById(

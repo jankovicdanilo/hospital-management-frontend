@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteDoctor, getDoctors } from '../api/doctor';
 import type { DoctorResponseDto } from '../types/doctor';
+import DataTable from '../components/DataTable';
 
 export default function DoctorsPage() {
   const { user } = useAuth();
@@ -11,22 +12,26 @@ export default function DoctorsPage() {
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<DoctorResponseDto | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const pageSize = 5;
+  const [totalCount, setTotalCount] = useState(0);
 
   const loadDoctors = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await getDoctors(user!.token);
-      setDoctors(data);
+      const data = await getDoctors(pageNumber, pageSize, user!.token);
+      setDoctors(data.items);
+      setTotalCount(data.totalCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, pageNumber]);
 
   useEffect(() => {
-    loadDoctors();
+    void loadDoctors();
   }, [loadDoctors]);
 
   async function handleConfirmDelete() {
@@ -68,54 +73,35 @@ export default function DoctorsPage() {
         </div>
       )}
 
-      <div className="rounded-2xl bg-white shadow-md overflow-hidden">
-        {loading ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">Loading doctors…</div>
-        ) : doctors.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">No doctors found.</div>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-3 font-medium text-gray-500">First Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Last Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Specialization</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Email</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Phone</th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {doctors.map((doctor) => (
-                <tr key={doctor.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-800">{doctor.firstName ?? '—'}</td>
-                  <td className="px-6 py-4 text-gray-800">{doctor.lastName ?? '—'}</td>
-                  <td className="px-6 py-4 text-gray-600">{doctor.specialization ?? '—'}</td>
-                  <td className="px-6 py-4 text-gray-600">{doctor.email ?? '—'}</td>
-                  <td className="px-6 py-4 text-gray-600">{doctor.phone ?? '—'}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        to={`/doctors/${doctor.id}/edit`}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setPendingDelete(doctor)}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+          columns={[
+            { header: 'First Name', render: (d) => d.firstName ?? '—' },
+            { header: 'Last Name', render: (d) => d.lastName ?? '—' },
+            { header: 'Specialization', render: (d) => d.specialization ?? '—' },
+            { header: 'Email', render: (d) => d.email ?? '—' },
+            { header: 'Phone', render: (d) => d.phone ?? '—' },
+          ]}
+          rows={doctors}
+          rowKey={(d) => d.id}
+          loading={loading}
+          emptyMessage="No doctors found."
+          actions={(d) => (
+              <>
+                <Link to={`/doctors/${d.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  Edit
+                </Link>
+                <button type="button" onClick={() => setPendingDelete(d)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                  Delete
+                </button>
+              </>
+          )}
+          pagination={{
+            pageNumber,
+            pageSize,
+            totalCount,
+            onPageChange: setPageNumber,
+          }}
+      />
 
       {pendingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

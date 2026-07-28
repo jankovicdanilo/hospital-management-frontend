@@ -14,18 +14,23 @@ assume these without restating them.
 All backend failures follow one of two shapes:
 
 ### Business-rule / not-found errors
+
 Status code indicates the category (404 not found, 409 conflict,
 401 unauthorized, 400 validation, 502 upstream failure). Body:
 
+```json
 { "message": string, "errorCode": string }
+```
 
 ### Field-level validation errors (FluentValidation, always 400)
 
+```json
 {
-"errorCode": "VALIDATION_FAILED",
-"message": string,
-"errors": { "<FieldName>": ["<message>", ...], ... }
+  "errorCode": "VALIDATION_FAILED",
+  "message": string,
+  "errors": { "<FieldName>": ["<message>", ...], ... }
 }
+```
 
 ## Shared API client code
 
@@ -36,32 +41,34 @@ per-feature.
 
 If it does not exist yet, create it with this shape:
 
+```ts
 export interface ApiErrorResponse {
-message: string;
-errorCode: string;
-errors?: Record<string, string[]>;
+  message: string;
+  errorCode: string;
+  errors?: Record<string, string[]>;
 }
 
 export class ApiError extends Error {
-readonly errorCode: string;
-readonly errors?: Record<string, string[]>;
+  readonly errorCode: string;
+  readonly errors?: Record<string, string[]>;
 
-constructor(message: string, errorCode: string, errors?: Record<string, string[]>) {
-super(message);
-this.name = 'ApiError';
-this.errorCode = errorCode;
-this.errors = errors;
-}
+  constructor(message: string, errorCode: string, errors?: Record<string, string[]>) {
+    super(message);
+    this.name = 'ApiError';
+    this.errorCode = errorCode;
+    this.errors = errors;
+  }
 }
 
 export async function throwApiError(response: Response): Promise<never> {
-const body: ApiErrorResponse = await response.json();
-throw new ApiError(body.message, body.errorCode, body.errors);
+  const body: ApiErrorResponse = await response.json();
+  throw new ApiError(body.message, body.errorCode, body.errors);
 }
 
 export function authHeaders(token: string): HeadersInit {
-return { Authorization: `Bearer ${token}` };
+  return { Authorization: `Bearer ${token}` };
 }
+```
 
 ## Success responses
 
@@ -76,12 +83,12 @@ return { Authorization: `Bearer ${token}` };
 - Exception: Billing's invoice generation endpoint returns a raw file
   (binary), not JSON.
 
-  ## Pagination
+## Pagination
 
-  Paginated list endpoints accept `pageNumber` and `pageSize` as query
-  parameters (e.g. `GET /api/patient?pageNumber=1&pageSize=20`), validated
-  server-side (page number > 0, page size between 1 and 100). Check the
-  specific service's contract file for which list endpoints are paginated.
+Paginated list endpoints accept `pageNumber` and `pageSize` as query
+parameters (e.g. `GET /api/patient?pageNumber=1&pageSize=20`), validated
+server-side (page number > 0, page size between 1 and 100). Check the
+specific service's contract file for which list endpoints are paginated.
 
 ## Environment variables
 
@@ -121,4 +128,4 @@ If it does not exist yet, create a generic component accepting:
 columns (header + render function per column), rows, rowKey, loading,
 emptyMessage, optional actions per row, and an optional pagination
 object ({ pageNumber, pageSize, totalCount, onPageChange }) rendering
-page controls.</message>
+page controls.

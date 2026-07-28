@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteProcedure, getProcedures } from '../api/procedure';
 import type { ProcedureListDto } from '../types/procedure';
+import DataTable from '../components/DataTable';
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(price);
@@ -15,22 +16,26 @@ export default function ProceduresPage() {
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<ProcedureListDto | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const pageSize = 5;
+  const [totalCount, setTotalCount] = useState(0);
 
   const loadProcedures = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await getProcedures(user!.token);
-      setProcedures(data);
+      const data = await getProcedures(pageNumber, pageSize, user!.token);
+      setProcedures(data.items);
+      setTotalCount(data.totalCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, pageNumber]);
 
   useEffect(() => {
-    loadProcedures();
+    void loadProcedures();
   }, [loadProcedures]);
 
   async function handleConfirmDelete() {
@@ -72,48 +77,32 @@ export default function ProceduresPage() {
         </div>
       )}
 
-      <div className="rounded-2xl bg-white shadow-md overflow-hidden">
-        {loading ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">Loading procedures…</div>
-        ) : procedures.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-500">No procedures found.</div>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-6 py-3 font-medium text-gray-500">Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Price</th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {procedures.map((procedure) => (
-                <tr key={procedure.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-800">{procedure.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{formatPrice(procedure.price)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        to={`/procedures/${procedure.id}/edit`}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setPendingDelete(procedure)}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+          columns={[
+            { header: 'Name', render: (p) => p.name },
+            { header: 'Price', render: (p) => formatPrice(p.price) },
+          ]}
+          rows={procedures}
+          rowKey={(p) => p.id}
+          loading={loading}
+          emptyMessage="No procedures found."
+          actions={(p) => (
+              <>
+                <Link to={`/procedures/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  Edit
+                </Link>
+                <button type="button" onClick={() => setPendingDelete(p)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                  Delete
+                </button>
+              </>
+          )}
+          pagination={{
+            pageNumber,
+            pageSize,
+            totalCount,
+            onPageChange: setPageNumber,
+          }}
+      />
 
       {pendingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
