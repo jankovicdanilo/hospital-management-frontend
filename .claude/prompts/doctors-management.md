@@ -1,5 +1,7 @@
 ## Feature: Doctor Management Interface
 
+I want to create a page with doctors table. Use doctor-service backend for fetching and updating data.
+
 - A table listing all doctors (first name, last name, specialization, email, phone),
   using the shared DataTable component with pagination
 - Edit and Delete buttons on each row

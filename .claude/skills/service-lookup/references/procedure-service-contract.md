@@ -1,8 +1,3 @@
----
-name: procedure-service
-description: Use this skill when building or modifying any frontend feature that calls Procedure endpoints on QueryService or CommandService.
----
-
 # Procedure Service
 
 ## Endpoints

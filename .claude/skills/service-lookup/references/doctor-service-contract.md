@@ -1,8 +1,3 @@
----
-name: doctor-service
-description: Use this skill when building or modifying any frontend feature that calls Doctor endpoints on QueryService or CommandService.
----
-
 # Doctor Service
 
 ## Endpoints

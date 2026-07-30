@@ -43,3 +43,11 @@ Claude Code should follow these conventions automatically when writing or editin
 - Never touch .env at all — no reading, no writing, no creating it. Use .env.example for declaring what variables a feature needs 
   (placeholder values only); the developer creates/edits their own .env manually. This is enforced by a hook, but don't attempt it regardless.
 - Never commit `.env` — confirm it's covered by `.gitignore`.
+
+# Environment variables
+
+Frontend env vars pointing at backend services:
+
+- VITE_AUTH_SERVICE_URL — Auth service
+- VITE_QUERY_SERVICE_SERVICE_URL — QueryService (all GET/read endpoints)
+- VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (all POST/PUT/DELETE endpoints)

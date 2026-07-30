@@ -1,8 +1,3 @@
----
-name: auth-service
-description: Use this skill when building or modifying any frontend feature that calls the Auth service — login, registration, current user, or user management endpoints.
----
-
 # Auth Service
 
 ### POST /api/auth/login

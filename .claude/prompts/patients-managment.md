@@ -1,5 +1,7 @@
 ## Feature: Patient Management Interface
 
+I want to create a page with patients table. Use patient-service backend for fetching and updating data.
+
 - A table listing all patients (name, last name, email, phone, date of birth),
   using the shared DataTable component with pagination
 - Edit and Delete buttons on each row

@@ -1,8 +1,3 @@
----
-name: patient-service
-description: Use this skill when building or modifying any frontend feature that calls Patient endpoints on QueryService or CommandService.
----
-
 # Patient Service
 
 ## Endpoints
