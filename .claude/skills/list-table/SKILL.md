@@ -7,3 +7,4 @@ description: Use this skill when building or modifying any page that shows a lis
 
 - references/data-table-component.md — the shared DataTable component
 - references/pagination.md — pagination request/response conventions
+- references/list-styling.md — stat cards, avatars, and status badges for list rows

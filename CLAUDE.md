@@ -1,4 +1,4 @@
-# Project Conventions
+# # Project Conventions
 
 This file documents coding standards for this project.
 Claude Code should follow these conventions automatically when writing or editing any code here.
@@ -12,12 +12,18 @@ Claude Code should follow these conventions automatically when writing or editin
 
 - Use Tailwind for all styling. Do not add external UI component
   libraries unless explicitly requested.
-  Don't default to the plainest possible implementation. Use thoughtful spacing, 
-  typography hierarchy, and subtle color/shadow choices — this is an internal business tool, 
-  not a wireframe, but it should still feel considered rather than bare-minimum. 
+  Don't default to the plainest possible implementation. Use thoughtful spacing,
+  typography hierarchy, and subtle color/shadow choices — this is an internal business tool,
+  not a wireframe, but it should still feel considered rather than bare-minimum.
   Look at existing styled components in the project (e.g. LoginPage) for the established visual language and stay consistent with it rather than inventing a new style each time.
-  You have creative latitude here — exact colors, spacing values, and layout details don't 
+  You have creative latitude here — exact colors, spacing values, and layout details don't
   need to be specified in every prompt. Use good judgment by default so this doesn't need correcting after the fact.
+
+  Established conventions: primary actions use a solid blue button with
+  white text; secondary actions (Cancel, Edit) use bordered/outline
+  buttons; destructive actions (Delete) use a red outline style. Cards
+  and tables use rounded corners with generous padding over a dense
+  layout.
 
 ## Scope Discipline
 
@@ -44,7 +50,7 @@ Claude Code should follow these conventions automatically when writing or editin
   (placeholder values only); the developer creates/edits their own .env manually. This is enforced by a hook, but don't attempt it regardless.
 - Never commit `.env` — confirm it's covered by `.gitignore`.
 
-# Environment variables
+## Environment variables
 
 Frontend env vars pointing at backend services:
 
