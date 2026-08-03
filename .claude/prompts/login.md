@@ -2,6 +2,9 @@
 
 I want to create login page. Use auth-service backend for fetching and updating data.
 
+Before starting, read:
+- [API conventions](.claude/prompts/api-conventions.md)
+
 - A login form with username and password inputs
 - Client-side validation requiring both fields, with visible feedback
   if submitted empty

@@ -2,6 +2,10 @@
 
 I want to create a page with doctors table. Use doctor-service backend for fetching and updating data.
 
+Before starting, read:
+- [List/table conventions](.claude/prompts/list-table.md)
+- [API conventions](.claude/prompts/api-conventions.md)
+
 - A table listing all doctors (first name, last name, specialization, email, phone),
   using the shared DataTable component with pagination
 - Edit and Delete buttons on each row

@@ -57,3 +57,16 @@ Frontend env vars pointing at backend services:
 - VITE_AUTH_SERVICE_URL — Auth service
 - VITE_QUERY_SERVICE_SERVICE_URL — QueryService (all GET/read endpoints)
 - VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (all POST/PUT/DELETE endpoints)
+
+## Auth
+
+Authenticated requests attach the JWT token as a Bearer token in the
+Authorization header. Token comes from the in-memory auth context —
+never persisted to storage.
+
+## Handling inconsistencies between files
+
+If you find two files disagreeing (e.g. an env var name, a type shape,
+a route path), do not silently resolve it by picking one side. Flag
+the discrepancy and ask which one is correct — don't assume the older
+or "example" file is the source of truth.

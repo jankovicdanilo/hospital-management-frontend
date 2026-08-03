@@ -2,6 +2,10 @@
 
 I want to create a page with procedures table. Use procedure-service backend for fetching and updating data.
 
+Before starting, read:
+- [List/table conventions](.claude/prompts/list-table.md)
+- [API conventions](.claude/prompts/api-conventions.md)
+
 - A table listing all procedures (name, price formatted as currency,
   e.g. "€45.00"), using the shared DataTable component with pagination
 - Edit and Delete buttons on each row
