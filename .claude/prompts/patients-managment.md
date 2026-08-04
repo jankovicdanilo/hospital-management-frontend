@@ -4,7 +4,7 @@ I want to create a page with patients table. Use patient-service backend for fet
 
 Before starting, read:
 - [List/table conventions](.claude/prompts/list-table.md)
-- [API conventions](.claude/prompts/api-conventions.md)
+- [API conventions](.claude/architecture/instructions/api-conventions.md)
 
 - A table listing all patients (name, last name, email, phone, date of birth),
   using the shared DataTable component with pagination

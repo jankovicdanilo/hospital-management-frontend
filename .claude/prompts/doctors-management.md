@@ -4,7 +4,7 @@ I want to create a page with doctors table. Use doctor-service backend for fetch
 
 Before starting, read:
 - [List/table conventions](.claude/prompts/list-table.md)
-- [API conventions](.claude/prompts/api-conventions.md)
+- [API conventions](.claude/architecture/instructions/api-conventions.md)
 
 - A table listing all doctors (first name, last name, specialization, email, phone),
   using the shared DataTable component with pagination

@@ -4,7 +4,7 @@ I want to create a page with procedures table. Use procedure-service backend for
 
 Before starting, read:
 - [List/table conventions](.claude/prompts/list-table.md)
-- [API conventions](.claude/prompts/api-conventions.md)
+- [API conventions](.claude/architecture/instructions/api-conventions.md)
 
 - A table listing all procedures (name, price formatted as currency,
   e.g. "€45.00"), using the shared DataTable component with pagination
