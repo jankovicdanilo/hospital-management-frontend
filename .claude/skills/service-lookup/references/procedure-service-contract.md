@@ -3,7 +3,7 @@
 ## Endpoints
 
 QueryService:
-- GET /api/procedure → ProcedureListDto[] (list)
+- GET /api/procedure?pageNumber={n}&pageSize={n} → PagedResult<ProcedureListDto> (list, paginated)
 - GET /api/procedure/{id} → ProcedureResponseDto
 
 CommandService:

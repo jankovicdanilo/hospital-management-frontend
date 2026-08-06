@@ -3,7 +3,7 @@
 ## Endpoints
 
 QueryService:
-- GET /api/doctor → DoctorResponseDto[] (list)
+- GET /api/doctor?pageNumber={n}&pageSize={n} → PagedResult<DoctorResponseDto> (list, paginated)
 - GET /api/doctor/{id} → DoctorResponseDto
 
 CommandService:
