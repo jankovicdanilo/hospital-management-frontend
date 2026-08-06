@@ -115,6 +115,9 @@ export default function DoctorsPage() {
           emptyMessage="No doctors found."
           actions={(d) => (
               <>
+                <Link to={`/doctors/${d.id}`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  View
+                </Link>
                 <Link to={`/doctors/${d.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                   Edit
                 </Link>
