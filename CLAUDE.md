@@ -39,10 +39,16 @@ Claude Code should follow these conventions automatically when writing or editin
 
 ## Git
 
-- Never run any git commands — no git add, git commit, git push, branch creation, or any other git operation. 
-  Leave the working tree as modified/untracked files; the developer reviews and commits manually. 
-- If .gitignore doesn't exist or looks incomplete, flag it to the developer rather than fixing it yourself via git commands — 
-  you can still create/edit the .gitignore file's contents directly, since that's a file edit, not a git operation.
+- Never run any git commands that change repository state — no git add,
+  git commit, git push, branch creation, merge, reset, or similar.
+  Leave the working tree as modified/untracked files; the developer
+  reviews and commits manually.
+- Read-only git commands (git diff, git log, git status) are fine —
+  needed for reviewing changes before a PR.
+- If .gitignore doesn't exist or looks incomplete, flag it to the
+  developer rather than fixing it yourself via git commands — you can
+  still create/edit the .gitignore file's contents directly, since
+  that's a file edit, not a git operation.
 
 ## Environment Files
 
