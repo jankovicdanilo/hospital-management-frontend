@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthLayout() {
@@ -18,7 +18,51 @@ export default function AuthLayout() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-white shadow-sm border-b border-gray-100">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <span className="text-lg font-semibold text-gray-800">Hospital Management</span>
+          <div className="flex items-center gap-8">
+            <span className="text-lg font-semibold text-gray-800">Hospital Management</span>
+            <nav className="flex items-center gap-1">
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                Dashboard
+              </NavLink>
+              <NavLink
+                to="/patients"
+                className={({ isActive }) =>
+                  `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                Patients
+              </NavLink>
+                <NavLink
+                    to="/doctors"
+                    className={({ isActive }) =>
+                        `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                    }
+                >
+                    Doctors
+                </NavLink>
+                <NavLink
+                    to="/procedures"
+                    className={({ isActive }) =>
+                        `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                    }
+                >
+                    Procedures
+                </NavLink>
+            </nav>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium text-gray-500">{user.username}</span>
             <button
