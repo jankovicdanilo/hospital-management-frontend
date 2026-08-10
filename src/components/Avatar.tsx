@@ -9,13 +9,23 @@ function getInitials(name: string): string {
   return (first + last).toUpperCase();
 }
 
+type AvatarSize = 'sm' | 'lg';
+
+const sizeClasses: Record<AvatarSize, string> = {
+  sm: 'h-9 w-9 text-sm',
+  lg: 'h-16 w-16 text-xl',
+};
+
 interface AvatarProps {
   name: string;
+  size?: AvatarSize;
 }
 
-export default function Avatar({ name }: AvatarProps) {
+export default function Avatar({ name, size = 'sm' }: AvatarProps) {
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+    <span
+      className={`flex shrink-0 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-700 ${sizeClasses[size]}`}
+    >
       {getInitials(name)}
     </span>
   );

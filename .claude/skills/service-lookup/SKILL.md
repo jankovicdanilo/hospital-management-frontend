@@ -7,9 +7,11 @@ description: Use this skill when you need to interact with {service-name} backen
 
 ## Steps
 
-1. Identify the service name mentioned in the prompt (e.g. "patient-service").
-2. Read `../references/{service-name}-contract.md` to get that
-      service's endpoints and DTOs.
+1. Identify every service name mentioned in the prompt (e.g.
+   "patient-service" — a prompt may name more than one, e.g. a page
+   that combines doctor-service and doctor-schedule-service).
+2. For each one, read `../references/{service-name}-contract.md` to
+   get that service's endpoints and DTOs.
 3. Implement the feature using those endpoints/DTOs, following the
    general API conventions already provided in the prompt.
 
