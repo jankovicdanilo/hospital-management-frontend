@@ -19,8 +19,21 @@ export class ApiError extends Error {
 }
 
 export async function throwApiError(response: Response): Promise<never> {
-    const body: ApiErrorResponse = await response.json();
-    throw new ApiError(body.message, body.errorCode, body.errors);
+    const text = await response.text();
+
+    if (text) {
+        try {
+            const body: ApiErrorResponse = JSON.parse(text);
+            throw new ApiError(body.message, body.errorCode, body.errors);
+        } catch (err) {
+            if (err instanceof ApiError) {
+                throw err;
+            }
+            // Body was present but not valid JSON — fall through to the generic error below.
+        }
+    }
+
+    throw new ApiError(`Request failed with status ${response.status}.`, 'UNKNOWN_ERROR');
 }
 
 export function authHeaders(token: string): HeadersInit {

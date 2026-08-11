@@ -61,8 +61,9 @@ Claude Code should follow these conventions automatically when writing or editin
 Frontend env vars pointing at backend services:
 
 - VITE_AUTH_SERVICE_URL — Auth service
-- VITE_QUERY_SERVICE_SERVICE_URL — QueryService (all GET/read endpoints)
-- VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (all POST/PUT/DELETE endpoints)
+- VITE_QUERY_SERVICE_SERVICE_URL — QueryService (GET/read endpoints for patients/doctors/procedures/doctor-schedules)
+- VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (POST/PUT/DELETE endpoints for patients/doctors/procedures/doctor-schedules)
+- VITE_APPOINTMENT_SERVICE_URL — Appointment service (all endpoints, reads and writes — this service is not split across QueryService/CommandService)
 
 ## Auth
 

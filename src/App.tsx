@@ -10,6 +10,9 @@ import DoctorFormPage from './pages/DoctorFormPage';
 import DoctorDetailPage from './pages/DoctorDetailPage';
 import ProceduresPage from './pages/ProceduresPage';
 import ProcedureFormPage from './pages/ProcedureFormPage';
+import AppointmentsPage from './pages/AppointmentsPage';
+import AppointmentFormPage from './pages/AppointmentFormPage';
+import AppointmentDetailPage from './pages/AppointmentDetailPage';
 
 function App() {
   return (
@@ -29,6 +32,10 @@ function App() {
             <Route path="/procedures" element={<ProceduresPage />} />
             <Route path="/procedures/new" element={<ProcedureFormPage />} />
             <Route path="/procedures/:id/edit" element={<ProcedureFormPage />} />
+            <Route path="/appointments" element={<AppointmentsPage />} />
+            <Route path="/appointments/new" element={<AppointmentFormPage />} />
+            <Route path="/appointments/:id" element={<AppointmentDetailPage />} />
+            <Route path="/appointments/:id/edit" element={<AppointmentFormPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
