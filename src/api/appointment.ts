@@ -17,10 +17,12 @@ export async function getAppointmentsByWeek(
   endDate: string,
   token: string,
   doctorId?: number,
+  patientId?: number,
 ): Promise<{ items: AppointmentListResponseDto[]; totalCount: number }> {
   const doctorParam = doctorId != null ? `&doctorId=${doctorId}` : '';
+  const patientParam = patientId != null ? `&patientId=${patientId}` : '';
   const response = await fetch(
-    `${APPOINTMENT_BASE_URL}/api/appointment?startDate=${startDate}&endDate=${endDate}${doctorParam}&pageNumber=1&pageSize=100`,
+    `${APPOINTMENT_BASE_URL}/api/appointment?startDate=${startDate}&endDate=${endDate}${doctorParam}${patientParam}&pageNumber=1&pageSize=100`,
     { headers: authHeaders(token) },
   );
 
@@ -95,7 +97,7 @@ export async function updateAppointment(
 }
 
 export async function deleteAppointment(id: number, token: string): Promise<void> {
-  const response = await fetch(`${APPOINTMENT_BASE_URL}/api/appointment?id=${id}`, {
+  const response = await fetch(`${APPOINTMENT_BASE_URL}/api/appointment/${id}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   });

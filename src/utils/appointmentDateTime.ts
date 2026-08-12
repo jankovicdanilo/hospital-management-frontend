@@ -35,9 +35,9 @@ export function parseSlotTime(dateIso: string, timeStr: string): Date {
   return new Date(`${dateIso}T${timeStr}`);
 }
 
-/** Formats a Date as a local (no-timezone-shift) "YYYY-MM-DDTHH:mm:ss" string for the backend. */
+/** Formats a Date as a UTC ISO string for the backend (e.g. "2026-08-14T10:00:00Z"). */
 export function toApiDateTimeString(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return date.toISOString();
 }
 
 export function formatDateIso(date: Date): string {

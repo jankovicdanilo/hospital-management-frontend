@@ -1,52 +1,48 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Stethoscope, User } from 'lucide-react';
+import { Stethoscope, User, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors } from '../api/doctor';
+import { getPatients } from '../api/patient';
+import { getProcedures } from '../api/procedure';
 import { getAppointmentsByWeek, updateAppointmentStatus } from '../api/appointment';
 import type { AppointmentListResponseDto } from '../types/appointment';
 import type { DoctorResponseDto } from '../types/doctor';
+import type { PatientListDto } from '../types/patient';
+import type { ProcedureListDto } from '../types/procedure';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
 import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../utils/appointmentDateTime';
+import MultiSelectDropdown from '../components/MultiSelectDropdown';
 
 const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 20;
 const HOURS = Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) => GRID_START_HOUR + i);
 const HOUR_HEIGHT = 88;
 // Tall enough to fit a block's 3 text lines (time, doctor, patient) plus the
-// status control / View link row without clipping, even for a short appointment.
+// status control without clipping, even for a short appointment.
 const MIN_BLOCK_HEIGHT = 84;
 // The time-equivalent of MIN_BLOCK_HEIGHT. A block shorter than this renders
-// taller than its real duration, so two back-to-back short appointments in
-// the same column would visually collide even though they don't overlap in
-// time. Column assignment below treats every block as occupying at least
-// this many minutes so it never places two such blocks in the same column.
+// taller than its real duration, so two back-to-back short appointments
+// would visually collide even though they don't overlap in time. Grouping
+// below treats every appointment as occupying at least this many minutes so
+// two such appointments are bundled into one summary card instead.
 const MIN_BLOCK_MINUTES = Math.ceil((MIN_BLOCK_HEIGHT / HOUR_HEIGHT) * 60);
-// Cap how many appointments render side by side in a single overlap cluster.
-// Beyond this, the rest collapse into a single "+N more" chip — otherwise a
-// busy slot with many overlapping appointments would shrink every column to
-// an unreadable sliver.
-const MAX_VISIBLE_COLUMNS = 3;
 
-interface PositionedAppointment {
-  type: 'appointment';
+interface PositionedSingle {
+  type: 'single';
   appt: AppointmentListResponseDto;
   startMinutes: number;
   endMinutes: number;
-  column: number;
-  totalColumns: number;
 }
 
-interface PositionedOverflow {
-  type: 'overflow';
+interface PositionedGroup {
+  type: 'group';
   appts: AppointmentListResponseDto[];
   startMinutes: number;
   endMinutes: number;
-  column: number;
-  totalColumns: number;
 }
 
-type PositionedItem = PositionedAppointment | PositionedOverflow;
+type PositionedItem = PositionedSingle | PositionedGroup;
 
 function formatTimeRange(appt: AppointmentListResponseDto): string {
   const start = new Date(appt.dateTime);
@@ -55,6 +51,17 @@ function formatTimeRange(appt: AppointmentListResponseDto): string {
   return `${fmt(start)}–${fmt(end)}`;
 }
 
+function formatMinutesRange(startMinutes: number, endMinutes: number): string {
+  const fmt = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
+  return `${fmt(startMinutes)}–${fmt(endMinutes)}`;
+}
+
+/**
+ * Groups appointments that overlap (or are close enough in time that a
+ * min-height block would visually collide with the next one) into a single
+ * summary card, so any time slot with more than one appointment shows a
+ * count instead of cramped side-by-side blocks.
+ */
 function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[] {
   const items = appointments
     .map((appt) => {
@@ -84,72 +91,24 @@ function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[]
     clusters.push(currentCluster);
   }
 
-  const result: PositionedItem[] = [];
-  for (const cluster of clusters) {
-    const columnEnds: number[] = [];
-    const columnOf = new Map<(typeof items)[number], number>();
-
-    for (const item of cluster) {
-      let placed = false;
-      for (let i = 0; i < columnEnds.length; i++) {
-        if (columnEnds[i] <= item.startMinutes) {
-          columnEnds[i] = item.layoutEndMinutes;
-          columnOf.set(item, i);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        columnEnds.push(item.layoutEndMinutes);
-        columnOf.set(item, columnEnds.length - 1);
-      }
-    }
-
-    if (columnEnds.length <= MAX_VISIBLE_COLUMNS) {
-      for (const item of cluster) {
-        result.push({
-          type: 'appointment',
-          appt: item.appt,
-          startMinutes: item.startMinutes,
-          endMinutes: item.endMinutes,
-          column: columnOf.get(item)!,
-          totalColumns: columnEnds.length,
-        });
-      }
-      continue;
-    }
-
-    // Too many concurrent appointments to show side by side — keep the
-    // first (MAX_VISIBLE_COLUMNS - 1) columns individually visible and
-    // collapse the rest into a single "+N more" chip in the last column.
-    const overflowColumnIndex = MAX_VISIBLE_COLUMNS - 1;
-    const visible = cluster.filter((item) => columnOf.get(item)! < overflowColumnIndex);
-    const overflow = cluster.filter((item) => columnOf.get(item)! >= overflowColumnIndex);
-
-    for (const item of visible) {
-      result.push({
-        type: 'appointment',
+  return clusters.map((cluster) => {
+    if (cluster.length === 1) {
+      const item = cluster[0];
+      return {
+        type: 'single',
         appt: item.appt,
         startMinutes: item.startMinutes,
         endMinutes: item.endMinutes,
-        column: columnOf.get(item)!,
-        totalColumns: MAX_VISIBLE_COLUMNS,
-      });
+      };
     }
 
-    if (overflow.length > 0) {
-      result.push({
-        type: 'overflow',
-        appts: overflow.map((o) => o.appt),
-        startMinutes: Math.min(...overflow.map((o) => o.startMinutes)),
-        endMinutes: Math.max(...overflow.map((o) => o.endMinutes)),
-        column: overflowColumnIndex,
-        totalColumns: MAX_VISIBLE_COLUMNS,
-      });
-    }
-  }
-
-  return result;
+    return {
+      type: 'group',
+      appts: cluster.map((c) => c.appt),
+      startMinutes: Math.min(...cluster.map((c) => c.startMinutes)),
+      endMinutes: Math.max(...cluster.map((c) => c.endMinutes)),
+    };
+  });
 }
 
 export default function AppointmentsPage() {
@@ -162,9 +121,13 @@ export default function AppointmentsPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const [doctors, setDoctors] = useState<DoctorResponseDto[]>([]);
-  const [doctorFilter, setDoctorFilter] = useState('');
+  const [patients, setPatients] = useState<PatientListDto[]>([]);
+  const [procedures, setProcedures] = useState<ProcedureListDto[]>([]);
+  const [doctorFilterIds, setDoctorFilterIds] = useState<string[]>([]);
+  const [patientFilterId, setPatientFilterId] = useState('');
+  const [procedureFilterId, setProcedureFilterId] = useState('');
 
-  const [overflowModal, setOverflowModal] = useState<{
+  const [groupModal, setGroupModal] = useState<{
     dayLabel: string;
     appts: AppointmentListResponseDto[];
   } | null>(null);
@@ -172,14 +135,20 @@ export default function AppointmentsPage() {
   useEffect(() => {
     let cancelled = false;
 
-    getDoctors(1, 100, user!.token)
-      .then((data) => {
+    Promise.all([
+      getDoctors(1, 100, user!.token),
+      getPatients(1, 100, user!.token),
+      getProcedures(1, 100, user!.token),
+    ])
+      .then(([doctorData, patientData, procedureData]) => {
         if (!cancelled) {
-          setDoctors(data.items);
+          setDoctors(doctorData.items);
+          setPatients(patientData.items);
+          setProcedures(procedureData.items);
         }
       })
       .catch(() => {
-        // Filter list is a convenience — silently skip if it fails to load.
+        // Filter lists are a convenience — silently skip if they fail to load.
       });
 
     return () => {
@@ -207,11 +176,13 @@ export default function AppointmentsPage() {
     setLoading(true);
     setError('');
     try {
+      const singleDoctorId = doctorFilterIds.length === 1 ? Number(doctorFilterIds[0]) : undefined;
       const data = await getAppointmentsByWeek(
         formatDateIso(weekStart),
         formatDateIso(addDays(weekStart, 4)),
         user!.token,
-        doctorFilter ? Number(doctorFilter) : undefined,
+        singleDoctorId,
+        patientFilterId ? Number(patientFilterId) : undefined,
       );
       setAppointments(data.items);
     } catch (err) {
@@ -219,22 +190,39 @@ export default function AppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, weekStart, doctorFilter]);
+  }, [user, weekStart, doctorFilterIds, patientFilterId]);
 
   useEffect(() => {
     void loadWeek();
   }, [loadWeek]);
 
+  // The backend can only filter by a single doctorId, and has no procedure
+  // filter at all — so a multi-doctor selection and the procedure filter are
+  // both applied client-side on top of whatever the server already returned.
+  const filteredAppointments = useMemo(
+    () =>
+      appointments.filter((a) => {
+        if (doctorFilterIds.length > 1 && !doctorFilterIds.includes(String(a.doctorId))) {
+          return false;
+        }
+        if (procedureFilterId && !a.procedures.some((p) => String(p.procedureId) === procedureFilterId)) {
+          return false;
+        }
+        return true;
+      }),
+    [appointments, doctorFilterIds, procedureFilterId],
+  );
+
   const appointmentsByDay = useMemo(
     () =>
       days.map((day) =>
-        layoutDay(appointments.filter((a) => formatDateIso(new Date(a.dateTime)) === day.iso)),
+        layoutDay(filteredAppointments.filter((a) => formatDateIso(new Date(a.dateTime)) === day.iso)),
       ),
-    [appointments, days],
+    [filteredAppointments, days],
   );
 
   async function handleStatusChange(appt: AppointmentListResponseDto, status: 'Completed' | 'Cancelled') {
-    setOverflowModal(null);
+    setGroupModal(null);
     setUpdatingId(appt.id);
     setError('');
     try {
@@ -317,16 +305,48 @@ export default function AppointmentsPage() {
               <label htmlFor="doctorFilter" className="text-sm font-medium text-gray-600">
                 Doctor
               </label>
-              <select
+              <MultiSelectDropdown
                 id="doctorFilter"
-                value={doctorFilter}
-                onChange={(e) => setDoctorFilter(e.target.value)}
+                options={doctors.map((d) => ({ value: String(d.id), label: `${d.firstName} ${d.lastName}` }))}
+                selected={doctorFilterIds}
+                onChange={setDoctorFilterIds}
+                placeholder="All Doctors"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="patientFilter" className="text-sm font-medium text-gray-600">
+                Patient
+              </label>
+              <select
+                id="patientFilter"
+                value={patientFilterId}
+                onChange={(e) => setPatientFilterId(e.target.value)}
                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Doctors</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.firstName} {d.lastName}
+                <option value="">All Patients</option>
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="procedureFilter" className="text-sm font-medium text-gray-600">
+                Procedure
+              </label>
+              <select
+                id="procedureFilter"
+                value={procedureFilterId}
+                onChange={(e) => setProcedureFilterId(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Procedures</option>
+                {procedures.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
                   </option>
                 ))}
               </select>
@@ -389,25 +409,32 @@ export default function AppointmentsPage() {
                         MIN_BLOCK_HEIGHT,
                         ((clampedEnd - clampedStart) / 60) * HOUR_HEIGHT,
                       );
-                      const positionStyle = {
-                        top,
-                        height,
-                        left: `calc(${item.column} * (100% / ${item.totalColumns}))`,
-                        width: `calc(100% / ${item.totalColumns} - 4px)`,
-                      };
 
-                      if (item.type === 'overflow') {
+                      if (item.type === 'group') {
                         return (
-                          <button
-                            key={`overflow-${item.startMinutes}-${item.column}`}
-                            type="button"
-                            onClick={() => setOverflowModal({ dayLabel: day.dateLabel, appts: item.appts })}
-                            className="absolute overflow-hidden rounded-lg border border-gray-300 bg-gray-100 px-2 py-1 text-left text-xs text-gray-700 shadow-sm hover:bg-gray-200 transition-colors"
-                            style={positionStyle}
+                          <div
+                            key={`group-${item.startMinutes}`}
+                            role="button"
+                            tabIndex={0}
+                            title={`${item.appts.length} appointments — click to view`}
+                            onClick={() => setGroupModal({ dayLabel: day.dateLabel, appts: item.appts })}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setGroupModal({ dayLabel: day.dateLabel, appts: item.appts });
+                              }
+                            }}
+                            className="absolute left-1 right-1 flex cursor-pointer flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-center text-gray-600 shadow-sm transition-colors hover:bg-gray-100"
+                            style={{ top, height }}
                           >
-                            <p className="font-semibold">+{item.appts.length} more</p>
-                            <p className="text-[10px] text-gray-500">Click to view</p>
-                          </button>
+                            <Users className="h-4 w-4 text-gray-400" />
+                            <p className="text-xs font-semibold text-gray-700">
+                              {item.appts.length} appointments
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {formatMinutesRange(item.startMinutes, item.endMinutes)}
+                            </p>
+                          </div>
                         );
                       }
 
@@ -428,8 +455,8 @@ export default function AppointmentsPage() {
                               navigate(`/appointments/${appt.id}`);
                             }
                           }}
-                          className={`absolute overflow-hidden rounded-lg border px-2 py-1 text-xs shadow-sm cursor-pointer hover:brightness-95 transition-[filter] ${styles.bg} ${styles.border} ${styles.text}`}
-                          style={positionStyle}
+                          className={`absolute left-1 right-1 overflow-hidden rounded-lg border px-2 py-1 text-xs shadow-sm cursor-pointer hover:brightness-95 transition-[filter] ${styles.bg} ${styles.border} ${styles.text}`}
+                          style={{ top, height }}
                         >
                           <p className="font-semibold truncate">{timeRangeLabel}</p>
                           <p className="flex items-center gap-1 truncate">
@@ -452,14 +479,14 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      {overflowModal && (
+      {groupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">{overflowModal.dayLabel} appointments</h2>
+              <h2 className="text-lg font-semibold text-gray-800">{groupModal.dayLabel} appointments</h2>
               <button
                 type="button"
-                onClick={() => setOverflowModal(null)}
+                onClick={() => setGroupModal(null)}
                 aria-label="Close"
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -468,7 +495,7 @@ export default function AppointmentsPage() {
             </div>
 
             <div className="space-y-2">
-              {overflowModal.appts
+              {groupModal.appts
                 .slice()
                 .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
                 .map((appt) => {

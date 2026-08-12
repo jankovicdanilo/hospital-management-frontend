@@ -13,12 +13,7 @@ conventions.
 - GET /api/appointment/{id} → AppointmentResponseDto
 - POST /api/appointment, body AppointmentCreateRequestDto → AppointmentCreateResponseDto
 - PUT /api/appointment, body AppointmentUpdateRequestDto → AppointmentUpdateResponseDto
-- DELETE /api/appointment?id={id} → success/failure only
-    - Unlike other services, `id` is a query parameter here, not a route
-      segment — the `[HttpDelete]` action has no `{id}` route template,
-      so `DELETE /api/appointment/{id}` 405s (its path shape collides
-      with the `GET /api/appointment/{id}` route but isn't registered
-      for DELETE)
+- DELETE /api/appointment/{id} → success/failure only
 - PATCH /api/appointment/status, body AppointmentStatusUpdateDto → success/failure, message only
 - GET /api/appointment/free-slots?doctorId={id}&date={date} → TimeSlotDto[]
 - GET /api/appointment/patient/{patientId}/history → AppointmentResponseDto[]
@@ -51,3 +46,43 @@ confirm exact format via Swagger before parsing on the frontend.
 
 Note: `status` serializes as a string (confirmed pattern from Doctor
 Schedule).
+
+## Frontend implementation notes
+
+These were never explicitly confirmed against Swagger — documented so
+a future rebuild doesn't have to rediscover them by trial and error:
+
+- The frontend sends `dateTime` on create/update as a local,
+  timezone-less string (`YYYY-MM-DDTHH:mm:ss`, no `Z`/offset suffix) —
+  not `Date.toISOString()` — so the wall-clock time the user picked
+  isn't shifted by timezone conversion. If the backend actually expects
+  UTC or an offset, appointment times booked from a non-UTC client will
+  be off by the local offset.
+- `TimeSlotDto.start`/`.end` format was never pinned down (could be a
+  bare time-of-day like `"09:00:00"` or a full ISO datetime). The
+  frontend parses defensively: if the string contains `T` it's treated
+  as a full datetime, otherwise it's combined with the query date as
+  `${date}T${time}`.
+- The free-slots endpoint appears to throw a business-rule error (e.g.
+  409, message like "Doctor does not work on Wednesday") rather than
+  returning `200` with an empty array when the doctor has no schedule
+  for that day. The frontend treats both cases as "no slots available"
+  in the UI, but surfaces the thrown error message specifically if one
+  comes back.
+- Error responses on this service are not guaranteed to have a JSON
+  body (a 409 from free-slots and a 405 from a routing mismatch have
+  both come back with an empty body in practice). `throwApiError` in
+  `src/api/apiErrors.ts` must not assume every non-2xx response is
+  parseable JSON — this is a cross-cutting fix, not appointment-only,
+  and api-conventions.md's shared-code template has been updated to
+  match.
+- The list endpoint (`GET /api/appointment`) has no procedure filter
+  query param, even though `AppointmentListResponseDto.procedures` is
+  returned per-appointment. A "filter by procedure" UI has to fetch
+  the full (already doctorId/patientId-filtered) week and filter
+  client-side by checking each appointment's `procedures` array — it
+  cannot be pushed down to the backend.
+- The `doctorId` filter on the list endpoint is documented as a single
+  value; multi-doctor filtering in the UI is done by fetching
+  unfiltered and filtering client-side rather than assuming the
+  backend accepts repeated `doctorId` params.
