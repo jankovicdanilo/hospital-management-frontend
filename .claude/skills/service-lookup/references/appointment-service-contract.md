@@ -52,12 +52,11 @@ Schedule).
 These were never explicitly confirmed against Swagger — documented so
 a future rebuild doesn't have to rediscover them by trial and error:
 
-- The frontend sends `dateTime` on create/update as a local,
-  timezone-less string (`YYYY-MM-DDTHH:mm:ss`, no `Z`/offset suffix) —
-  not `Date.toISOString()` — so the wall-clock time the user picked
-  isn't shifted by timezone conversion. If the backend actually expects
-  UTC or an offset, appointment times booked from a non-UTC client will
-  be off by the local offset.
+- The frontend sends `dateTime` on create/update as a genuine UTC ISO
+    string (`date.toISOString()`), matching the general DateTime/timezone
+    rule in api-conventions.md. This was previously sent as a local,
+    timezone-less string, which caused schedule/working-hours validation
+    to silently fail — do not revert to that approach.
 - `TimeSlotDto.start`/`.end` format was never pinned down (could be a
   bare time-of-day like `"09:00:00"` or a full ISO datetime). The
   frontend parses defensively: if the string contains `T` it's treated

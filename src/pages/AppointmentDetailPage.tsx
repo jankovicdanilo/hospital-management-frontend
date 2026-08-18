@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteAppointment, getAppointmentById } from '../api/appointment';
+import { getErrorMessage } from '../api/apiErrors';
 import type { AppointmentResponseDto } from '../types/appointment';
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
@@ -27,7 +28,7 @@ export default function AppointmentDetailPage() {
       const data = await getAppointmentById(appointmentId, user!.token);
       setAppointment(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -44,7 +45,7 @@ export default function AppointmentDetailPage() {
       await deleteAppointment(appointmentId, user!.token);
       navigate('/appointments', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
       setDeleting(false);
       setConfirmingDelete(false);
     }

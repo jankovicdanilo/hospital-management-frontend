@@ -6,6 +6,7 @@ import { getDoctors } from '../api/doctor';
 import { getPatients } from '../api/patient';
 import { getProcedures } from '../api/procedure';
 import { getAppointmentsByWeek, updateAppointmentStatus } from '../api/appointment';
+import { getErrorMessage } from '../api/apiErrors';
 import type { AppointmentListResponseDto } from '../types/appointment';
 import type { DoctorResponseDto } from '../types/doctor';
 import type { PatientListDto } from '../types/patient';
@@ -186,7 +187,7 @@ export default function AppointmentsPage() {
       );
       setAppointments(data.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -229,7 +230,7 @@ export default function AppointmentsPage() {
       await updateAppointmentStatus({ id: appt.id, status }, user!.token);
       await loadWeek();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setUpdatingId(null);
     }

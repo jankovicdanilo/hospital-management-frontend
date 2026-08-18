@@ -25,8 +25,7 @@ Before starting, read:
   showing the count (e.g. "3 appointments") and the time range they
   span. Clicking that card opens a small list/modal showing every
   bundled appointment in full (time range, doctor, patient, status
-  control, click to view) — this is what keeps a busy slot legible
-  instead of shrinking blocks into unreadable slivers.
+  control, click to view).
   Fetch the whole visible week in one call using the startDate/endDate
   range filter. Navigate to previous/next week.
 - Add filter controls above the grid:

@@ -6,7 +6,7 @@ import { getDoctors } from '../api/doctor';
 import { getPatients } from '../api/patient';
 import { getDoctorSchedulesByDoctor } from '../api/doctorSchedule';
 import { createAppointment, getAppointmentById, getFreeSlots, updateAppointment } from '../api/appointment';
-import { ApiError } from '../api/apiErrors';
+import { ApiError, getErrorMessage } from '../api/apiErrors';
 import type { DoctorResponseDto } from '../types/doctor';
 import type { PatientListDto } from '../types/patient';
 import type { TimeSlotDto } from '../types/appointment';
@@ -129,7 +129,7 @@ export default function AppointmentFormPage() {
         if (!cancelled) {
           setFieldErrors((prev) => ({
             ...prev,
-            general: err instanceof Error ? err.message : 'An unexpected error occurred.',
+            general: getErrorMessage(err),
           }));
         }
       })
@@ -186,7 +186,7 @@ export default function AppointmentFormPage() {
         if (!cancelled) {
           setFieldErrors((prev) => ({
             ...prev,
-            general: err instanceof Error ? err.message : 'An unexpected error occurred.',
+            general: getErrorMessage(err),
           }));
         }
       })
@@ -220,7 +220,7 @@ export default function AppointmentFormPage() {
         if (!cancelled) {
           setFieldErrors((prev) => ({
             ...prev,
-            general: err instanceof Error ? err.message : 'An unexpected error occurred.',
+            general: getErrorMessage(err),
           }));
         }
       })
@@ -295,7 +295,7 @@ export default function AppointmentFormPage() {
           setSelectedSlot((prev) => prev ?? originalSlot);
         } else {
           setFreeSlots([]);
-          setSlotsError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+          setSlotsError(getErrorMessage(err));
         }
       })
       .finally(() => {
@@ -465,7 +465,7 @@ export default function AppointmentFormPage() {
       } else {
         setFieldErrors((prev) => ({
           ...prev,
-          general: err instanceof Error ? err.message : 'An unexpected error occurred.',
+          general: getErrorMessage(err),
         }));
       }
     } finally {

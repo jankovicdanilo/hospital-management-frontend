@@ -39,3 +39,14 @@ export async function throwApiError(response: Response): Promise<never> {
 export function authHeaders(token: string): HeadersInit {
     return { Authorization: `Bearer ${token}` };
 }
+
+/** Turns a caught error into a message safe to show a user, in place of raw browser/JS text. */
+export function getErrorMessage(err: unknown): string {
+    if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        return 'Unable to reach the server. Check your connection and try again.';
+    }
+    if (err instanceof Error) {
+        return err.message;
+    }
+    return 'An unexpected error occurred.';
+}
