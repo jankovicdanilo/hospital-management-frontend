@@ -24,12 +24,15 @@ export async function throwApiError(response: Response): Promise<never> {
     if (text) {
         try {
             const body: ApiErrorResponse = JSON.parse(text);
-            throw new ApiError(body.message, body.errorCode, body.errors);
+            if (typeof body.message === 'string' && body.message) {
+                throw new ApiError(body.message, body.errorCode, body.errors);
+            }
         } catch (err) {
             if (err instanceof ApiError) {
                 throw err;
             }
-            // Body was present but not valid JSON — fall through to the generic error below.
+            // Body was present but not valid JSON, or valid JSON that doesn't match
+            // ApiErrorResponse (e.g. a raw framework error page) — fall through below.
         }
     }
 

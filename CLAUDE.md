@@ -36,6 +36,9 @@ Claude Code should follow these conventions automatically when writing or editin
 - If a build/typecheck passes, that is sufficient verification unless
   told otherwise. Do not launch a browser or install additional tools
   to "double check" on your own initiative.
+- **Do a single pass, not a multi-agent or multi-pass pipeline, unless
+  explicitly asked.** If a task seems to warrant that level of 
+  thoroughness, say so and ask, rather than just doing it.
 
 ## Git
 

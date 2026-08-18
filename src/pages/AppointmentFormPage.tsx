@@ -60,6 +60,17 @@ function weekdayOfIsoDate(iso: string): DayOfWeek {
   return JS_DAY_TO_NAME[new Date(y, m - 1, d).getDay()];
 }
 
+// TimeSlotDto entries from getFreeSlots are bare local "HH:mm:ss" time-of-day
+// strings (parseSlotTime's non-"T" branch), not absolute timestamps. The
+// injected slot for the appointment being edited must use the same
+// representation — otherwise it gets parsed as an absolute UTC instant while
+// every other slot is parsed as local wall-clock time, and the two can
+// silently disagree once converted to milliseconds via parseSlotTime.
+function toLocalTimeOfDay(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 /** Merges a flat list of free slots into contiguous free time ranges. */
 function mergeFreeIntervals(slots: TimeSlotDto[], dateIso: string): { start: Date; end: Date }[] {
   const parsed = slots
@@ -166,7 +177,7 @@ export default function AppointmentFormPage() {
         const start = new Date(appt.dateTime);
         const apptDurationMinutes = Math.round(parseDurationToMinutes(appt.duration));
         const end = new Date(start.getTime() + apptDurationMinutes * 60000);
-        const slot: TimeSlotDto = { start: appt.dateTime, end: end.toISOString() };
+        const slot: TimeSlotDto = { start: toLocalTimeOfDay(start), end: toLocalTimeOfDay(end) };
         const dateIso = formatDateIso(start);
 
         setForm({
