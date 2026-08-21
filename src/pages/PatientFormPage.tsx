@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { createPatient, getPatientById, updatePatient } from '../api/patient';
-import { ApiError } from '../api/apiErrors';
+import { ApiError, getErrorMessage } from '../api/apiErrors';
 
 interface FormState {
   name: string;
@@ -53,7 +53,7 @@ export default function PatientFormPage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setServerError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+          setServerError(getErrorMessage(err));
         }
       })
       .finally(() => {
@@ -128,7 +128,7 @@ export default function PatientFormPage() {
         }
         setFieldErrors((prev) => ({ ...prev, ...mapped }));
       } else {
-        setServerError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+        setServerError(getErrorMessage(err));
       }
     } finally {
       setSaving(false);
