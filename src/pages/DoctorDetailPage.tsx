@@ -9,7 +9,7 @@ import {
   getDoctorSchedulesByDoctor,
   updateDoctorSchedule,
 } from '../api/doctorSchedule';
-import { ApiError } from '../api/apiErrors';
+import { ApiError, getErrorMessage } from '../api/apiErrors';
 import type { DoctorResponseDto } from '../types/doctor';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import Avatar from '../components/Avatar';
@@ -59,7 +59,7 @@ export default function DoctorDetailPage() {
       setDoctor(doctorData);
       setSchedules(scheduleData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ export default function DoctorDetailPage() {
         setFormErrors(Object.keys(mapped).length > 0 ? mapped : { general: err.message });
       } else {
         setFormErrors({
-          general: err instanceof Error ? err.message : 'An unexpected error occurred.',
+          general: getErrorMessage(err),
         });
       }
     } finally {
@@ -186,7 +186,7 @@ export default function DoctorDetailPage() {
       setPendingDelete(null);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setDeleting(false);
     }

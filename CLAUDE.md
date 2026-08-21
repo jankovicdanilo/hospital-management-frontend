@@ -36,13 +36,22 @@ Claude Code should follow these conventions automatically when writing or editin
 - If a build/typecheck passes, that is sufficient verification unless
   told otherwise. Do not launch a browser or install additional tools
   to "double check" on your own initiative.
+- **Do a single pass, not a multi-agent or multi-pass pipeline, unless
+  explicitly asked.** If a task seems to warrant that level of 
+  thoroughness, say so and ask, rather than just doing it.
 
 ## Git
 
-- Never run any git commands — no git add, git commit, git push, branch creation, or any other git operation. 
-  Leave the working tree as modified/untracked files; the developer reviews and commits manually. 
-- If .gitignore doesn't exist or looks incomplete, flag it to the developer rather than fixing it yourself via git commands — 
-  you can still create/edit the .gitignore file's contents directly, since that's a file edit, not a git operation.
+- Never run any git commands that change repository state — no git add,
+  git commit, git push, branch creation, merge, reset, or similar.
+  Leave the working tree as modified/untracked files; the developer
+  reviews and commits manually.
+- Read-only git commands (git diff, git log, git status) are fine —
+  needed for reviewing changes before a PR.
+- If .gitignore doesn't exist or looks incomplete, flag it to the
+  developer rather than fixing it yourself via git commands — you can
+  still create/edit the .gitignore file's contents directly, since
+  that's a file edit, not a git operation.
 
 ## Environment Files
 
@@ -55,8 +64,9 @@ Claude Code should follow these conventions automatically when writing or editin
 Frontend env vars pointing at backend services:
 
 - VITE_AUTH_SERVICE_URL — Auth service
-- VITE_QUERY_SERVICE_SERVICE_URL — QueryService (all GET/read endpoints)
-- VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (all POST/PUT/DELETE endpoints)
+- VITE_QUERY_SERVICE_SERVICE_URL — QueryService (GET/read endpoints for patients/doctors/procedures/doctor-schedules)
+- VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (POST/PUT/DELETE endpoints for patients/doctors/procedures/doctor-schedules)
+- VITE_APPOINTMENT_SERVICE_URL — Appointment service (all endpoints, reads and writes — this service is not split across QueryService/CommandService)
 
 ## Auth
 

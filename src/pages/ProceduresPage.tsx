@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteProcedure, getProcedures } from '../api/procedure';
+import { getErrorMessage } from '../api/apiErrors';
 import type { ProcedureListDto } from '../types/procedure';
 import DataTable from '../components/DataTable';
 import Badge from '../components/Badge';
@@ -40,7 +41,7 @@ export default function ProceduresPage() {
       setProcedures(data.items);
       setTotalCount(data.totalCount);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ export default function ProceduresPage() {
       setPendingDelete(null);
       await loadProcedures();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setDeleting(false);
     }

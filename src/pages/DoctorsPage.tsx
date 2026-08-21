@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteDoctor, getDoctors } from '../api/doctor';
+import { getErrorMessage } from '../api/apiErrors';
 import type { DoctorResponseDto } from '../types/doctor';
 import DataTable from '../components/DataTable';
 import Avatar from '../components/Avatar';
@@ -27,7 +28,7 @@ export default function DoctorsPage() {
       setDoctors(data.items);
       setTotalCount(data.totalCount);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ export default function DoctorsPage() {
       setPendingDelete(null);
       await loadDoctors();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setError(getErrorMessage(err));
     } finally {
       setDeleting(false);
     }

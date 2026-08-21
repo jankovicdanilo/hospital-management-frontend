@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginRequest } from '../api/auth';
+import { getErrorMessage } from '../api/apiErrors';
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -41,7 +42,7 @@ export default function LoginPage() {
       login(userData);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      setServerError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
