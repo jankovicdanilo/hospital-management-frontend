@@ -45,6 +45,12 @@ Before starting, read:
       procedures are typically only attached to Completed appointments
       ("procedures performed"), so this filter will mostly surface
       completed ones.
+    - "Status" — multi-select (same checklist-dropdown pattern as
+       Doctor), defaulting to all statuses. The list endpoint's
+       `status` query param only accepts a single value, so this
+       always filters client-side against each fetched appointment's
+       `status`, the same way the Procedure filter works — do not
+       assume the backend accepts multiple `status` values.
   All active filters combine (AND, not OR).
 - Each appointment block shows the time range (start–end, not just
   the start time), the doctor name, and the patient name — give

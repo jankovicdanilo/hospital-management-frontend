@@ -127,6 +127,7 @@ export default function AppointmentsPage() {
   const [doctorFilterIds, setDoctorFilterIds] = useState<string[]>([]);
   const [patientFilterId, setPatientFilterId] = useState('');
   const [procedureFilterId, setProcedureFilterId] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   const [groupModal, setGroupModal] = useState<{
     dayLabel: string;
@@ -197,9 +198,10 @@ export default function AppointmentsPage() {
     void loadWeek();
   }, [loadWeek]);
 
-  // The backend can only filter by a single doctorId, and has no procedure
-  // filter at all — so a multi-doctor selection and the procedure filter are
-  // both applied client-side on top of whatever the server already returned.
+  // The backend can only filter by a single doctorId, and has no procedure or
+  // status filter at all — so a multi-doctor selection, the procedure filter,
+  // and the status filter are all applied client-side on top of whatever the
+  // server already returned.
   const filteredAppointments = useMemo(
     () =>
       appointments.filter((a) => {
@@ -209,9 +211,12 @@ export default function AppointmentsPage() {
         if (procedureFilterId && !a.procedures.some((p) => String(p.procedureId) === procedureFilterId)) {
           return false;
         }
+        if (statusFilter.length > 0 && !statusFilter.includes(a.status)) {
+          return false;
+        }
         return true;
       }),
-    [appointments, doctorFilterIds, procedureFilterId],
+    [appointments, doctorFilterIds, procedureFilterId, statusFilter],
   );
 
   const appointmentsByDay = useMemo(
@@ -351,6 +356,19 @@ export default function AppointmentsPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="statusFilter" className="text-sm font-medium text-gray-600">
+                Status
+              </label>
+              <MultiSelectDropdown
+                id="statusFilter"
+                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: s }))}
+                selected={statusFilter}
+                onChange={setStatusFilter}
+                placeholder="All Statuses"
+              />
             </div>
           </div>
 
