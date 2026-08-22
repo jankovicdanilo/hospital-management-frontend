@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { deleteAppointment, getAppointmentById } from '../api/appointment';
 import { getErrorMessage } from '../api/apiErrors';
-import type { AppointmentResponseDto } from '../types/appointment';
+import type { AppointmentResponseDto, ProcedureAttachFailure } from '../types/appointment';
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import { STATUS_STYLES } from '../utils/appointmentStatus';
 import { formatDurationLabel } from '../utils/appointmentDateTime';
+import { formatCurrency } from '../utils/currency';
 
 export default function AppointmentDetailPage() {
   const { id } = useParams();
   const appointmentId = Number(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const [procedureFailures, setProcedureFailures] = useState<ProcedureAttachFailure[]>(
+    (location.state as { procedureFailures?: ProcedureAttachFailure[] } | null)?.procedureFailures ?? [],
+  );
   const [appointment, setAppointment] = useState<AppointmentResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -69,6 +74,35 @@ export default function AppointmentDetailPage() {
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {procedureFailures.length > 0 && (
+        <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold">
+                The appointment was created, but {procedureFailures.length === 1 ? 'a procedure' : 'some procedures'}{' '}
+                failed to attach:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {procedureFailures.map((failure, idx) => (
+                  <li key={idx}>
+                    <span className="font-medium">{failure.procedureName}</span> — {failure.message}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-amber-700">Retry attaching these manually from procedure management.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProcedureFailures([])}
+              aria-label="Dismiss"
+              className="text-amber-500 hover:text-amber-700 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -163,18 +197,18 @@ export default function AppointmentDetailPage() {
                 {appointment.procedures.map((proc) => (
                   <div key={proc.procedureId} className="flex items-center justify-between py-3">
                     <span className="text-sm font-medium text-gray-800">{proc.procedureName}</span>
-                    <span className="text-sm text-gray-600">${proc.procedurePrice.toFixed(2)}</span>
+                    <span className="text-sm text-gray-600">{formatCurrency(proc.procedurePrice)}</span>
                   </div>
                 ))}
               </div>
             )}
             <div className="mt-4 border-t border-gray-100 pt-4 flex items-center justify-between">
               <span className="text-sm text-gray-500">Discount</span>
-              <span className="text-sm text-gray-800">{appointment.discount}%</span>
+              <span className="text-sm text-gray-800">{formatCurrency(appointment.discount)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Total Cost</span>
-              <span className="text-sm font-semibold text-gray-900">${appointment.totalCost.toFixed(2)}</span>
+              <span className="text-sm font-semibold text-gray-900">{formatCurrency(appointment.totalCost)}</span>
             </div>
           </div>
 

@@ -18,6 +18,10 @@ AppointmentProcedureCreateRequestDto: { appointmentId: number, procedureId: numb
 AppointmentProcedureCreateResponseDto: { appointmentId: number, procedureId: number, procedureName: string, procedurePrice: number }
 AppointmentProcedureResponseDto: { appointmentId: number, procedureId: number, procedureName: string, procedurePrice: number }
 
+Served from the same base URL as Appointment
+(`VITE_APPOINTMENT_SERVICE_URL`) — this is part of the same
+Appointments microservice, not a separate service.
+
 ## Business rules (for context, not directly enforced by frontend on this pass)
 
 - Attaching a procedure requires the appointment to be in Pending

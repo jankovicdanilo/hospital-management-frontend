@@ -7,10 +7,7 @@ import type { ProcedureListDto } from '../types/procedure';
 import DataTable from '../components/DataTable';
 import Badge from '../components/Badge';
 import StatCard from '../components/StatCard';
-
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(price);
-}
+import { formatCurrency as formatPrice } from '../utils/currency';
 
 function priceTier(price: number): { label: string; color: 'green' | 'amber' | 'red' } {
   if (price < 100) {

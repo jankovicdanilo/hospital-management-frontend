@@ -4,14 +4,24 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors } from '../api/doctor';
 import { getPatients } from '../api/patient';
+import { getProcedures } from '../api/procedure';
 import { getDoctorSchedulesByDoctor } from '../api/doctorSchedule';
-import { createAppointment, getAppointmentById, getFreeSlots, updateAppointment } from '../api/appointment';
+import {
+  createAppointment,
+  createAppointmentProcedure,
+  getAppointmentById,
+  getFreeSlots,
+  updateAppointment,
+} from '../api/appointment';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
 import type { DoctorResponseDto } from '../types/doctor';
 import type { PatientListDto } from '../types/patient';
+import type { ProcedureListDto } from '../types/procedure';
 import type { TimeSlotDto } from '../types/appointment';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import DatePicker from '../components/DatePicker';
+import MultiSelectDropdown from '../components/MultiSelectDropdown';
+import type { ProcedureAttachFailure } from '../types/appointment';
 import {
   formatDateIso,
   minutesToDurationString,
@@ -19,6 +29,7 @@ import {
   parseSlotTime,
   toApiDateTimeString,
 } from '../utils/appointmentDateTime';
+import { formatCurrency } from '../utils/currency';
 
 const JS_DAY_TO_NAME: DayOfWeek[] = [
   'Sunday',
@@ -103,6 +114,8 @@ export default function AppointmentFormPage() {
 
   const [doctors, setDoctors] = useState<DoctorResponseDto[]>([]);
   const [patients, setPatients] = useState<PatientListDto[]>([]);
+  const [procedures, setProcedures] = useState<ProcedureListDto[]>([]);
+  const [selectedProcedureIds, setSelectedProcedureIds] = useState<string[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   const [loadingAppointment, setLoadingAppointment] = useState(isEdit);
@@ -128,13 +141,18 @@ export default function AppointmentFormPage() {
     let cancelled = false;
     setLoadingOptions(true);
 
-    Promise.all([getDoctors(1, 100, user!.token), getPatients(1, 100, user!.token)])
-      .then(([doctorData, patientData]) => {
+    Promise.all([
+      getDoctors(1, 100, user!.token),
+      getPatients(1, 100, user!.token),
+      getProcedures(1, 100, user!.token),
+    ])
+      .then(([doctorData, patientData, procedureData]) => {
         if (cancelled) {
           return;
         }
         setDoctors(doctorData.items);
         setPatients(patientData.items);
+        setProcedures(procedureData.items);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -452,11 +470,31 @@ export default function AppointmentFormPage() {
 
       if (isEdit) {
         await updateAppointment({ id: Number(id), ...payload }, user!.token);
-      } else {
-        await createAppointment(payload, user!.token);
+        navigate('/appointments', { replace: true });
+        return;
       }
 
-      navigate('/appointments', { replace: true });
+      const created = await createAppointment(payload, user!.token);
+
+      // Attach procedures one at a time (not in parallel) so a failure can be
+      // attributed to a specific procedure. A failure here doesn't roll back the
+      // appointment — it's surfaced as a banner on the detail page instead.
+      const procedureFailures: ProcedureAttachFailure[] = [];
+      for (const procedureIdStr of selectedProcedureIds) {
+        const procedureId = Number(procedureIdStr);
+        try {
+          await createAppointmentProcedure({ appointmentId: created.id, procedureId }, user!.token);
+        } catch (attachErr) {
+          const procedureName =
+            procedures.find((p) => p.id === procedureId)?.name ?? `Procedure #${procedureId}`;
+          procedureFailures.push({ procedureName, message: getErrorMessage(attachErr) });
+        }
+      }
+
+      navigate(`/appointments/${created.id}`, {
+        replace: true,
+        state: procedureFailures.length > 0 ? { procedureFailures } : undefined,
+      });
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         const mapped: FormErrors = {};
@@ -721,6 +759,27 @@ export default function AppointmentFormPage() {
               />
               {fieldErrors.notes && <p className="mt-1 text-xs text-red-600">{fieldErrors.notes}</p>}
             </div>
+
+            {!isEdit && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="procedures">
+                  Procedures <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <MultiSelectDropdown
+                  id="procedures"
+                  options={procedures.map((p) => ({
+                    value: String(p.id),
+                    label: `${p.name} — ${formatCurrency(p.price)}`,
+                  }))}
+                  selected={selectedProcedureIds}
+                  onChange={setSelectedProcedureIds}
+                  placeholder="No procedures selected"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Selected procedures are attached once the appointment is created.
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3">
               <Link

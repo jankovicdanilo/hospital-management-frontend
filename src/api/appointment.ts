@@ -2,6 +2,8 @@ import type {
   AppointmentCreateRequestDto,
   AppointmentCreateResponseDto,
   AppointmentListResponseDto,
+  AppointmentProcedureCreateRequestDto,
+  AppointmentProcedureResponseDto,
   AppointmentResponseDto,
   AppointmentStatusUpdateDto,
   AppointmentUpdateRequestDto,
@@ -105,6 +107,23 @@ export async function deleteAppointment(id: number, token: string): Promise<void
   if (!response.ok) {
     return throwApiError(response);
   }
+}
+
+export async function createAppointmentProcedure(
+  data: AppointmentProcedureCreateRequestDto,
+  token: string,
+): Promise<AppointmentProcedureResponseDto> {
+  const response = await fetch(`${APPOINTMENT_BASE_URL}/api/appointmentprocedure`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<AppointmentProcedureResponseDto>;
 }
 
 export async function updateAppointmentStatus(

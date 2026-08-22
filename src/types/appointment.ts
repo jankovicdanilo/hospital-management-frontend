@@ -18,6 +18,17 @@ export interface AppointmentProcedureResponseDto {
   procedurePrice: number;
 }
 
+export interface AppointmentProcedureCreateRequestDto {
+  appointmentId: number;
+  procedureId: number;
+}
+
+/** A procedure that failed to attach after an appointment was otherwise created successfully. */
+export interface ProcedureAttachFailure {
+  procedureName: string;
+  message: string;
+}
+
 export interface TreatmentResponseDto {
   id: number;
   appointmentId: number;
