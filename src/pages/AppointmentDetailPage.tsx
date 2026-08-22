@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { deleteAppointment, getAppointmentById } from '../api/appointment';
+import { downloadInvoice, type InvoiceFormat } from '../api/invoice';
 import { getErrorMessage } from '../api/apiErrors';
 import type { AppointmentResponseDto, ProcedureAttachFailure } from '../types/appointment';
 import Avatar from '../components/Avatar';
@@ -9,6 +11,11 @@ import Badge from '../components/Badge';
 import { STATUS_STYLES } from '../utils/appointmentStatus';
 import { formatDurationLabel } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
+
+function buildInvoiceFilename(patientName: string, format: InvoiceFormat): string {
+  const sanitized = patientName.trim().replace(/\s+/g, '_');
+  return sanitized ? `${sanitized}.${format}` : `invoice.${format}`;
+}
 
 export default function AppointmentDetailPage() {
   const { id } = useParams();
@@ -25,6 +32,8 @@ export default function AppointmentDetailPage() {
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [invoiceFormat, setInvoiceFormat] = useState<InvoiceFormat>('pdf');
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   const loadAppointment = useCallback(async () => {
     setLoading(true);
@@ -59,9 +68,33 @@ export default function AppointmentDetailPage() {
   const doctorName = appointment?.doctor
     ? `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim() || 'Unknown doctor'
     : 'Unknown doctor';
-  const patientName = appointment?.patient
-    ? `${appointment.patient.name ?? ''} ${appointment.patient.lastName ?? ''}`.trim() || 'Unknown patient'
-    : 'Unknown patient';
+  const rawPatientName = appointment?.patient
+    ? `${appointment.patient.name ?? ''} ${appointment.patient.lastName ?? ''}`.trim()
+    : '';
+  const patientName = rawPatientName || 'Unknown patient';
+
+  async function handleDownloadInvoice() {
+    if (!appointment) {
+      return;
+    }
+    setDownloadingInvoice(true);
+    setError('');
+    try {
+      const blob = await downloadInvoice(appointment.id, invoiceFormat, user!.token);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = buildInvoiceFilename(rawPatientName, invoiceFormat);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
@@ -113,7 +146,7 @@ export default function AppointmentDetailPage() {
       ) : !appointment ? null : (
         <>
           <div className="rounded-2xl bg-white shadow-md p-8 mb-6">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-semibold text-gray-800">
@@ -134,7 +167,30 @@ export default function AppointmentDetailPage() {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {appointment.status === 'Completed' && (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={invoiceFormat}
+                      onChange={(e) => setInvoiceFormat(e.target.value as InvoiceFormat)}
+                      disabled={downloadingInvoice}
+                      aria-label="Invoice format"
+                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <option value="pdf">PDF</option>
+                      <option value="docx">DOCX</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => void handleDownloadInvoice()}
+                      disabled={downloadingInvoice}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      {downloadingInvoice ? 'Downloading…' : 'Download Invoice'}
+                    </button>
+                  </div>
+                )}
                 {appointment.status === 'Pending' && (
                   <Link
                     to={`/appointments/${appointment.id}/edit`}
