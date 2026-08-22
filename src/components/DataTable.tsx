@@ -21,6 +21,7 @@ interface DataTableProps<T> {
     emptyMessage: string;
     actions?: (row: T) => ReactNode;
     pagination?: PaginationState;
+    onRowClick?: (row: T) => void;
 }
 
 function getPageNumbers(current: number, total: number): (number | '…')[] {
@@ -46,6 +47,7 @@ export default function DataTable<T>({
                                          emptyMessage,
                                          actions,
                                          pagination,
+                                         onRowClick,
                                      }: DataTableProps<T>) {
     const totalPages = pagination
         ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
@@ -73,7 +75,11 @@ export default function DataTable<T>({
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                     {rows.map((row) => (
-                        <tr key={rowKey(row)} className="hover:bg-gray-50 transition-colors">
+                        <tr
+                            key={rowKey(row)}
+                            onClick={onRowClick ? () => onRowClick(row) : undefined}
+                            className={`hover:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                        >
                             {columns.map((col) => (
                                 <td key={col.header} className="px-6 py-4 text-gray-600">
                                     {col.render(row)}

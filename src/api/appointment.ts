@@ -35,6 +35,24 @@ export async function getAppointmentsByWeek(
   return response.json() as Promise<{ items: AppointmentListResponseDto[]; totalCount: number }>;
 }
 
+export async function getAppointmentsByPatient(
+  patientId: number,
+  pageNumber: number,
+  pageSize: number,
+  token: string,
+): Promise<{ items: AppointmentListResponseDto[]; totalCount: number }> {
+  const response = await fetch(
+    `${APPOINTMENT_BASE_URL}/api/appointment?patientId=${patientId}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
+    { headers: authHeaders(token) },
+  );
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<{ items: AppointmentListResponseDto[]; totalCount: number }>;
+}
+
 export async function getAppointmentById(id: number, token: string): Promise<AppointmentResponseDto> {
   const response = await fetch(`${APPOINTMENT_BASE_URL}/api/appointment/${id}`, {
     headers: authHeaders(token),
