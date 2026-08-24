@@ -14,7 +14,7 @@ import { formatCurrency } from '../utils/currency';
 
 function formatDateOnly(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -22,7 +22,7 @@ function formatDateOnly(dateOnly: string): string {
 }
 
 function formatDateTime(dateTime: string): string {
-  return new Date(dateTime).toLocaleString(undefined, {
+  return new Date(dateTime).toLocaleString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

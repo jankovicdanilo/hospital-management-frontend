@@ -10,7 +10,7 @@ import StatCard from '../components/StatCard';
 
 function formatDate(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
