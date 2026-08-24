@@ -118,3 +118,15 @@ When displaying a `DateTime` received from the backend, convert it to
 the user's local time for display (`new Date(isoString)` plus
 `.toLocaleTimeString()`/`.toLocaleDateString()` — this happens
 automatically once the backend returns a proper UTC ISO string).
+
+The clinic's own timezone is `Europe/Podgorica`, matching
+`ClinicSettings.TimeZoneId` on the backend. Any frontend logic that
+needs to reason about clinic-local time explicitly (not just display
+to the current user) — e.g. interpreting a bare time-of-day string
+like a free-slot's `"09:00:00"` as a specific real instant — must use
+this known clinic timezone, not the browser's ambient local timezone.
+Do not assume the browser running the app is in the same timezone as
+the clinic; construct/parse such values using a timezone-aware
+approach (e.g. the `Temporal` API where available, or a small
+timezone-conversion utility) rather than a bare `new Date(...)`, which
+silently uses the browser's local timezone.

@@ -23,7 +23,9 @@ import DatePicker from '../components/DatePicker';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import type { ProcedureAttachFailure } from '../types/appointment';
 import {
+  CLINIC_TIME_ZONE,
   formatDateIso,
+  formatTimeOfDayInZone,
   minutesToDurationString,
   parseDurationToMinutes,
   parseSlotTime,
@@ -71,15 +73,16 @@ function weekdayOfIsoDate(iso: string): DayOfWeek {
   return JS_DAY_TO_NAME[new Date(y, m - 1, d).getDay()];
 }
 
-// TimeSlotDto entries from getFreeSlots are bare local "HH:mm:ss" time-of-day
+// TimeSlotDto entries from getFreeSlots are bare clinic-local "HH:mm:ss" time-of-day
 // strings (parseSlotTime's non-"T" branch), not absolute timestamps. The
 // injected slot for the appointment being edited must use the same
 // representation — otherwise it gets parsed as an absolute UTC instant while
-// every other slot is parsed as local wall-clock time, and the two can
-// silently disagree once converted to milliseconds via parseSlotTime.
-function toLocalTimeOfDay(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+// every other slot is parsed as clinic-local wall-clock time, and the two can
+// silently disagree once converted to milliseconds via parseSlotTime. Extracting
+// wall-clock components from the Date directly would use the browser's ambient
+// timezone instead, so this goes through the clinic timezone explicitly.
+function toClinicTimeOfDay(date: Date): string {
+  return formatTimeOfDayInZone(date, CLINIC_TIME_ZONE);
 }
 
 /** Merges a flat list of free slots into contiguous free time ranges. */
@@ -195,7 +198,7 @@ export default function AppointmentFormPage() {
         const start = new Date(appt.dateTime);
         const apptDurationMinutes = Math.round(parseDurationToMinutes(appt.duration));
         const end = new Date(start.getTime() + apptDurationMinutes * 60000);
-        const slot: TimeSlotDto = { start: toLocalTimeOfDay(start), end: toLocalTimeOfDay(end) };
+        const slot: TimeSlotDto = { start: toClinicTimeOfDay(start), end: toClinicTimeOfDay(end) };
         const dateIso = formatDateIso(start);
 
         setForm({
