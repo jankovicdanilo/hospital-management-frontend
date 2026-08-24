@@ -85,8 +85,11 @@ export default function PatientDetailPage() {
 
   // The backend has no status filter on this endpoint, so status filtering is
   // applied client-side against the already-fetched page, the same way it
-  // works on the Appointments page. Sorting is also done client-side since
-  // the backend's ordering for this endpoint isn't guaranteed.
+  // works on the Appointments page. The date sort below is also client-side
+  // and only reorders within that already-fetched page — it does NOT
+  // guarantee "most recent first" across the full history, since sorting
+  // happens after the backend has already paginated. There's no sort/orderBy
+  // param on this endpoint to request server-side ordering.
   const displayedAppointments = useMemo(
     () =>
       appointments

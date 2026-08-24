@@ -23,6 +23,8 @@ export interface AppointmentProcedureCreateRequestDto {
   procedureId: number;
 }
 
+export type AppointmentProcedureCreateResponseDto = AppointmentProcedureResponseDto;
+
 /** A procedure that failed to attach after an appointment was otherwise created successfully. */
 export interface ProcedureAttachFailure {
   procedureName: string;

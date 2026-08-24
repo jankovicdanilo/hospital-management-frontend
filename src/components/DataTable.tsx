@@ -86,7 +86,7 @@ export default function DataTable<T>({
                                 </td>
                             ))}
                             {actions && (
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex justify-end gap-2">{actions(row)}</div>
                                 </td>
                             )}

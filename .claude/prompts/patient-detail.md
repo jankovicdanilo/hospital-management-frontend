@@ -15,6 +15,12 @@ Before starting, read:
 - Below that, an "Appointment History" section: a paginated table
   (using the shared DataTable component) of every appointment for
   this patient, fetched from GET /api/appointment?patientId={id}
+  (paginated via pageNumber/pageSize). Note: there's also a dedicated
+  GET /api/appointment/patient/{patientId}/history endpoint documented
+  in appointment-service-contract.md, but it returns a plain
+  AppointmentResponseDto[] with no pageNumber/pageSize support — since
+  this page needs a paginated table, use the general list endpoint
+  with the patientId filter instead, not the dedicated history one.
 - Table columns: date/time, doctor name, status, total cost — sorted
   most recent first
 - A "Status" multi-select filter above the table (same
