@@ -384,9 +384,10 @@ export default function AppointmentFormPage() {
     : undefined;
   const durationEndLabel =
     selectedSlot && customDurationMinutes > 0
-      ? new Date(
-          parseSlotTime(form.date, selectedSlot.start).getTime() + customDurationMinutes * 60000,
-        ).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+      ? formatTimeOfDayInZone(
+          new Date(parseSlotTime(form.date, selectedSlot.start).getTime() + customDurationMinutes * 60000),
+          CLINIC_TIME_ZONE,
+        ).slice(0, 5)
       : null;
 
   function validate(): FormErrors | null {
@@ -417,11 +418,10 @@ export default function AppointmentFormPage() {
         errors.duration = 'Duration cannot exceed 8 hours.';
       } else {
         const end = new Date(start.getTime() + customDurationMinutes * 60000);
-        const daySchedule = doctorSchedules.find((s) => s.dayOfWeek === JS_DAY_TO_NAME[start.getDay()]);
+        const daySchedule = doctorSchedules.find((s) => s.dayOfWeek === weekdayOfIsoDate(form.date));
 
         if (daySchedule) {
-          const scheduleEnd = new Date(start);
-          scheduleEnd.setHours(daySchedule.endHour, 0, 0, 0);
+          const scheduleEnd = parseSlotTime(form.date, `${String(daySchedule.endHour).padStart(2, '0')}:00:00`);
 
           if (end.getTime() > scheduleEnd.getTime()) {
             errors.duration = `This doctor is only scheduled until ${daySchedule.endHour}:00 that day — reduce the duration or pick an earlier slot.`;
@@ -663,11 +663,7 @@ export default function AppointmentFormPage() {
                     const isSelected =
                       selectedSlot != null &&
                       parseSlotTime(form.date, selectedSlot.start).getTime() === start.getTime();
-                    const label = `${start.toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false,
-                    })}–${end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+                    const label = `${formatTimeOfDayInZone(start, CLINIC_TIME_ZONE).slice(0, 5)}–${formatTimeOfDayInZone(end, CLINIC_TIME_ZONE).slice(0, 5)}`;
 
                     return (
                       <button
