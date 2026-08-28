@@ -14,13 +14,12 @@ import {
   updateAppointment,
 } from '../api/appointment';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
-import type { DoctorResponseDto } from '../types/doctor';
-import type { PatientListDto } from '../types/patient';
 import type { ProcedureListDto } from '../types/procedure';
 import type { TimeSlotDto } from '../types/appointment';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import DatePicker from '../components/DatePicker';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
+import SearchableSelect from '../components/SearchableSelect';
 import type { ProcedureAttachFailure } from '../types/appointment';
 import {
   CLINIC_TIME_ZONE,
@@ -115,14 +114,14 @@ export default function AppointmentFormPage() {
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
 
-  const [doctors, setDoctors] = useState<DoctorResponseDto[]>([]);
-  const [patients, setPatients] = useState<PatientListDto[]>([]);
   const [procedures, setProcedures] = useState<ProcedureListDto[]>([]);
   const [selectedProcedureIds, setSelectedProcedureIds] = useState<string[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   const [loadingAppointment, setLoadingAppointment] = useState(isEdit);
   const [notEditable, setNotEditable] = useState(false);
+  const [initialDoctorLabel, setInitialDoctorLabel] = useState('');
+  const [initialPatientLabel, setInitialPatientLabel] = useState('');
 
   const [doctorSchedules, setDoctorSchedules] = useState<DoctorScheduleResponseDto[]>([]);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
@@ -144,17 +143,11 @@ export default function AppointmentFormPage() {
     let cancelled = false;
     setLoadingOptions(true);
 
-    Promise.all([
-      getDoctors(1, 100, user!.token),
-      getPatients(1, 100, user!.token),
-      getProcedures(1, 100, user!.token),
-    ])
-      .then(([doctorData, patientData, procedureData]) => {
+    getProcedures(1, 100, user!.token)
+      .then((procedureData) => {
         if (cancelled) {
           return;
         }
-        setDoctors(doctorData.items);
-        setPatients(patientData.items);
         setProcedures(procedureData.items);
       })
       .catch((err) => {
@@ -207,6 +200,16 @@ export default function AppointmentFormPage() {
           date: dateIso,
           notes: appt.notes ?? '',
         });
+        setInitialDoctorLabel(
+          appt.doctor
+            ? `${appt.doctor.firstName ?? ''} ${appt.doctor.lastName ?? ''}${
+                appt.doctor.specialization ? ` — ${appt.doctor.specialization}` : ''
+              }`.trim()
+            : '',
+        );
+        setInitialPatientLabel(
+          appt.patient ? `${appt.patient.name ?? ''} ${appt.patient.lastName ?? ''}`.trim() : '',
+        );
         setOriginalDoctorId(appt.doctor?.id ?? null);
         setOriginalDate(dateIso);
         setOriginalSlot(slot);
@@ -561,22 +564,22 @@ export default function AppointmentFormPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="doctorId">
                   Doctor
                 </label>
-                <select
+                <SearchableSelect
                   id="doctorId"
-                  value={form.doctorId}
-                  onChange={(e) => handleDoctorChange(e.target.value)}
-                  className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 ${
-                    fieldErrors.doctorId ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">Select a doctor…</option>
-                  {doctors.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.firstName} {d.lastName}
-                      {d.specialization ? ` — ${d.specialization}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  value={form.doctorId ? Number(form.doctorId) : null}
+                  onChange={(value) => handleDoctorChange(value == null ? '' : String(value))}
+                  fetchOptions={(search) =>
+                    getDoctors(1, 100, user!.token, search).then((data) =>
+                      data.items.map((d) => ({
+                        id: d.id,
+                        label: `${d.firstName} ${d.lastName}${d.specialization ? ` — ${d.specialization}` : ''}`,
+                      })),
+                    )
+                  }
+                  placeholder="Search for a doctor…"
+                  initialLabel={initialDoctorLabel}
+                  hasError={Boolean(fieldErrors.doctorId)}
+                />
                 {fieldErrors.doctorId && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.doctorId}</p>
                 )}
@@ -621,21 +624,21 @@ export default function AppointmentFormPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="patientId">
                 Patient
               </label>
-              <select
+              <SearchableSelect
                 id="patientId"
-                value={form.patientId}
-                onChange={(e) => setForm((prev) => ({ ...prev, patientId: e.target.value }))}
-                className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 ${
-                  fieldErrors.patientId ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select a patient…</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.lastName}
-                  </option>
-                ))}
-              </select>
+                value={form.patientId ? Number(form.patientId) : null}
+                onChange={(value) =>
+                  setForm((prev) => ({ ...prev, patientId: value == null ? '' : String(value) }))
+                }
+                fetchOptions={(search) =>
+                  getPatients(1, 100, user!.token, search).then((data) =>
+                    data.items.map((p) => ({ id: p.id, label: `${p.name} ${p.lastName}` })),
+                  )
+                }
+                placeholder="Search for a patient…"
+                initialLabel={initialPatientLabel}
+                hasError={Boolean(fieldErrors.patientId)}
+              />
               {fieldErrors.patientId && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.patientId}</p>
               )}

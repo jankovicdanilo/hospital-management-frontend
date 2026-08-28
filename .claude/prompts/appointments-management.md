@@ -6,6 +6,7 @@ fetching and updating data.
 
 Before starting, read:
 - [API conventions](.claude/architecture/instructions/api-conventions.md)
+- [SearchableSelect component](.claude/prompts/searchable-select.md)
 
 - Main view: a true time-grid week view (Monday–Friday), similar to
   Outlook/Google Calendar — hours listed down the left side, each
@@ -29,29 +30,36 @@ Before starting, read:
   Fetch the whole visible week in one call using the startDate/endDate
   range filter. Navigate to previous/next week.
 - Add filter controls above the grid:
-    - "Doctor" — multi-select (a checklist dropdown, not a plain
-      `<select>`), defaulting to all doctors. When exactly one doctor
-      is selected, pass that doctorId to the backend as a filter on
-      the week fetch (reduces payload and avoids the pagination cap
-      truncating results on a busy week); with zero or multiple
-      doctors selected, fetch unfiltered and filter client-side —
-      don't assume the backend's doctorId filter accepts multiple
-      values.
-    - "Patient" — single-select, passed to the backend as a filter on
-      the week fetch (the list endpoint supports patientId directly).
+    - "Doctor" — multi-select checklist dropdown (MultiSelectDropdown
+      component) with a search input at the top that filters the
+      already-fetched doctor list client-side as you type (no
+      debounce needed, no backend call — the full doctor list is
+      already loaded for this filter). Existing checked selections
+      persist regardless of what the search currently shows.
+      Defaulting to all doctors. When exactly one doctor is selected,
+      pass that doctorId to the backend as a filter on the week fetch
+      (reduces payload and avoids the pagination cap truncating
+      results on a busy week); with zero or multiple doctors
+      selected, fetch unfiltered and filter client-side — don't
+      assume the backend's doctorId filter accepts multiple values.
+    - "Patient" — single-select, using the new SearchableSelect
+      component (type to search, 300ms debounce, minimum 3 characters
+      before searching, backed by GET /api/patient's search param).
+      Passed to the backend as a filter on the week fetch (the list
+      endpoint supports patientId directly).
     - "Procedure" — single-select. The appointment list endpoint has
       no procedure filter param, so this filters client-side against
       each already-fetched appointment's `procedures` array. Note
       procedures are typically only attached to Completed appointments
       ("procedures performed"), so this filter will mostly surface
       completed ones.
-    - "Status" — multi-select (same checklist-dropdown pattern as
-       Doctor), defaulting to all statuses. The list endpoint's
-       `status` query param only accepts a single value, so this
-       always filters client-side against each fetched appointment's
-       `status`, the same way the Procedure filter works — do not
-       assume the backend accepts multiple `status` values.
-  All active filters combine (AND, not OR).
+    - "Status" — multi-select (same checklist-dropdown-with-search
+      pattern as Doctor), defaulting to all statuses. The list
+      endpoint's `status` query param only accepts a single value, so
+      this always filters client-side against each fetched
+      appointment's `status`, the same way the Procedure filter works
+      — do not assume the backend accepts multiple `status` values.
+      All active filters combine (AND, not OR).
 - Each appointment block shows the time range (start–end, not just
   the start time), the doctor name, and the patient name — give
   doctor and patient a distinguishing visual treatment (e.g. a
@@ -73,7 +81,11 @@ Before starting, read:
   read-only sections for procedures performed and treatment (if any)
   — no editing of procedures/treatment on this pass.
 - "New Appointment" action opens a create page:
-    1. Pick a doctor (from existing doctors)
+    1. Pick a doctor, via the new SearchableSelect component (type to
+       search, 300ms debounce, minimum 3 characters before searching,
+       calls GET /api/doctor with the search query param and a larger
+       pageSize e.g. 100 rather than paginating within the dropdown
+       itself)
     2. Pick a date, via a custom date picker component — not the
        native `<input type="date">`, which cannot disable specific
        weekdays. As soon as a doctor is picked, fetch their weekly
@@ -91,7 +103,9 @@ Before starting, read:
        picked — the doctor must have a schedule for that day of week,
        or no slots will be available. Picking one of these sets the
        appointment's start time.
-    4. Pick a patient
+    4. Pick a patient, via the same SearchableSelect component used
+       for the doctor picker, backed by GET /api/patient's search
+       param
     5. Pick a slot (start time)
     6. Duration is a separate, user-editable field — hours and minutes
        inputs — defaulting to the picked slot's own length but freely
@@ -100,15 +114,15 @@ Before starting, read:
        live "Ends at HH:mm" preview as the user adjusts it.
     7. Optional notes
     8. Optionally select one or more procedures to assign, via a
-          multi-select checklist (same pattern as the Doctor/Status
-          filters). This does not go in the create request body — the
-          appointment-service-contract has no procedure field on
-          AppointmentCreateRequestDto. Instead, after the appointment is
-          successfully created, attach each selected procedure with its
-          own POST /api/appointmentprocedure call (body:
-          { appointmentId, procedureId }), one at a time, not in
-          parallel — so failures can be attributed to a specific
-          procedure.
+       multi-select checklist (same pattern as the Doctor/Status
+       filters). This does not go in the create request body — the
+       appointment-service-contract has no procedure field on
+       AppointmentCreateRequestDto. Instead, after the appointment is
+       successfully created, attach each selected procedure with its
+       own POST /api/appointmentprocedure call (body:
+       { appointmentId, procedureId }), one at a time, not in
+       parallel — so failures can be attributed to a specific
+       procedure.
     9. Submit
 - If the appointment is created successfully but one or more procedure
   attachments fail afterward, do not treat this as a failed create —

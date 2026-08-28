@@ -11,10 +11,17 @@ import { throwApiError, authHeaders } from './apiErrors';
 const QUERY_BASE_URL = import.meta.env.VITE_QUERY_SERVICE_SERVICE_URL as string;
 const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_SERVICE_SERVICE_URL as string;
 
-export async function getPatients(pageNumber: number, pageSize: number, token: string): Promise<{ items: PatientListDto[]; totalCount: number }> {
-  const response = await fetch(`${QUERY_BASE_URL}/api/patient?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
-    headers: authHeaders(token),
-  });
+export async function getPatients(
+  pageNumber: number,
+  pageSize: number,
+  token: string,
+  search?: string,
+): Promise<{ items: PatientListDto[]; totalCount: number }> {
+  const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+  const response = await fetch(
+    `${QUERY_BASE_URL}/api/patient?pageNumber=${pageNumber}&pageSize=${pageSize}${searchParam}`,
+    { headers: authHeaders(token) },
+  );
 
   if (!response.ok) {
     return throwApiError(response);
