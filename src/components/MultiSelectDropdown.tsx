@@ -85,9 +85,9 @@ export default function MultiSelectDropdown({
                     type="checkbox"
                     checked={selected.includes(option.value)}
                     onChange={() => toggleValue(option.value)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  {option.label}
+                  <span>{option.label}</span>
                 </label>
               ))
             )}

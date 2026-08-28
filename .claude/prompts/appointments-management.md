@@ -1,7 +1,7 @@
 ## Feature: Appointment Management Interface
 
 I want to create an appointments calendar/list page. Use
-appointment-service, doctor-service, and patient-service backends for
+appointment-service, appointment-procedure-service, doctor-service, and patient-service backends for
 fetching and updating data.
 
 Before starting, read:
@@ -45,6 +45,12 @@ Before starting, read:
       procedures are typically only attached to Completed appointments
       ("procedures performed"), so this filter will mostly surface
       completed ones.
+    - "Status" — multi-select (same checklist-dropdown pattern as
+       Doctor), defaulting to all statuses. The list endpoint's
+       `status` query param only accepts a single value, so this
+       always filters client-side against each fetched appointment's
+       `status`, the same way the Procedure filter works — do not
+       assume the backend accepts multiple `status` values.
   All active filters combine (AND, not OR).
 - Each appointment block shows the time range (start–end, not just
   the start time), the doctor name, and the patient name — give
@@ -93,7 +99,24 @@ Before starting, read:
        not locked to the free-slot grid's fixed granularity. Show a
        live "Ends at HH:mm" preview as the user adjusts it.
     7. Optional notes
-    8. Submit
+    8. Optionally select one or more procedures to assign, via a
+          multi-select checklist (same pattern as the Doctor/Status
+          filters). This does not go in the create request body — the
+          appointment-service-contract has no procedure field on
+          AppointmentCreateRequestDto. Instead, after the appointment is
+          successfully created, attach each selected procedure with its
+          own POST /api/appointmentprocedure call (body:
+          { appointmentId, procedureId }), one at a time, not in
+          parallel — so failures can be attributed to a specific
+          procedure.
+    9. Submit
+- If the appointment is created successfully but one or more procedure
+  attachments fail afterward, do not treat this as a failed create —
+  navigate to the new appointment's detail page as normal, but show a
+  banner naming which specific procedures failed to attach (with their
+  error messages) so the user knows to retry those manually from
+  wherever procedure management happens. The appointment itself is not
+  rolled back.
 - Edit works the same as create, pre-filled with the appointment's
   current data (including duration split into hours/minutes) — only
   available for Pending appointments. If the free-slots lookup for the

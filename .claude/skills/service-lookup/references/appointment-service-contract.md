@@ -47,6 +47,10 @@ confirm exact format via Swagger before parsing on the frontend.
 Note: `status` serializes as a string (confirmed pattern from Doctor
 Schedule).
 
+Note: `discount` is a EUR monetary amount (same unit as `totalCost` and
+`procedurePrice`), not a percentage — display it with the shared
+`formatCurrency` helper, not a `%` suffix.
+
 ## Frontend implementation notes
 
 These were never explicitly confirmed against Swagger — documented so

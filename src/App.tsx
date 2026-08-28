@@ -8,6 +8,7 @@ import AuthLayout from './components/AuthLayout';
 import DoctorsPage from './pages/DoctorsPage';
 import DoctorFormPage from './pages/DoctorFormPage';
 import DoctorDetailPage from './pages/DoctorDetailPage';
+import PatientDetailPage from './pages/PatientDetailPage';
 import ProceduresPage from './pages/ProceduresPage';
 import ProcedureFormPage from './pages/ProcedureFormPage';
 import AppointmentsPage from './pages/AppointmentsPage';
@@ -25,6 +26,7 @@ function App() {
             <Route path="/patients" element={<PatientsPage />} />
             <Route path="/patients/new" element={<PatientFormPage />} />
             <Route path="/patients/:id/edit" element={<PatientFormPage />} />
+            <Route path="/patients/:id/history" element={<PatientDetailPage />} />
             <Route path="/doctors" element={<DoctorsPage />} />
             <Route path="/doctors/new" element={<DoctorFormPage />} />
             <Route path="/doctors/:id" element={<DoctorDetailPage />} />

@@ -67,6 +67,7 @@ Frontend env vars pointing at backend services:
 - VITE_QUERY_SERVICE_SERVICE_URL — QueryService (GET/read endpoints for patients/doctors/procedures/doctor-schedules)
 - VITE_COMMAND_SERVICE_SERVICE_URL — CommandService (POST/PUT/DELETE endpoints for patients/doctors/procedures/doctor-schedules)
 - VITE_APPOINTMENT_SERVICE_URL — Appointment service (all endpoints, reads and writes — this service is not split across QueryService/CommandService)
+- VITE_INVOICE_SERVICE_URL — Invoice service (all endpoints, reads and writes — this service is not split across QueryService/CommandService)
 
 ## Auth
 

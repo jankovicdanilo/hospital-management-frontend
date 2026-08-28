@@ -2,6 +2,8 @@ import type {
   AppointmentCreateRequestDto,
   AppointmentCreateResponseDto,
   AppointmentListResponseDto,
+  AppointmentProcedureCreateRequestDto,
+  AppointmentProcedureCreateResponseDto,
   AppointmentResponseDto,
   AppointmentStatusUpdateDto,
   AppointmentUpdateRequestDto,
@@ -23,6 +25,24 @@ export async function getAppointmentsByWeek(
   const patientParam = patientId != null ? `&patientId=${patientId}` : '';
   const response = await fetch(
     `${APPOINTMENT_BASE_URL}/api/appointment?startDate=${startDate}&endDate=${endDate}${doctorParam}${patientParam}&pageNumber=1&pageSize=100`,
+    { headers: authHeaders(token) },
+  );
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<{ items: AppointmentListResponseDto[]; totalCount: number }>;
+}
+
+export async function getAppointmentsByPatient(
+  patientId: number,
+  pageNumber: number,
+  pageSize: number,
+  token: string,
+): Promise<{ items: AppointmentListResponseDto[]; totalCount: number }> {
+  const response = await fetch(
+    `${APPOINTMENT_BASE_URL}/api/appointment?patientId=${patientId}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
     { headers: authHeaders(token) },
   );
 
@@ -105,6 +125,23 @@ export async function deleteAppointment(id: number, token: string): Promise<void
   if (!response.ok) {
     return throwApiError(response);
   }
+}
+
+export async function createAppointmentProcedure(
+  data: AppointmentProcedureCreateRequestDto,
+  token: string,
+): Promise<AppointmentProcedureCreateResponseDto> {
+  const response = await fetch(`${APPOINTMENT_BASE_URL}/api/appointmentprocedure`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<AppointmentProcedureCreateResponseDto>;
 }
 
 export async function updateAppointmentStatus(

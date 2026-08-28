@@ -1,25 +1,39 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { deleteAppointment, getAppointmentById } from '../api/appointment';
+import { downloadInvoice, type InvoiceFormat } from '../api/invoice';
 import { getErrorMessage } from '../api/apiErrors';
-import type { AppointmentResponseDto } from '../types/appointment';
+import type { AppointmentResponseDto, ProcedureAttachFailure } from '../types/appointment';
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import { STATUS_STYLES } from '../utils/appointmentStatus';
 import { formatDurationLabel } from '../utils/appointmentDateTime';
+import { formatCurrency } from '../utils/currency';
+
+function buildInvoiceFilename(patientName: string, format: InvoiceFormat): string {
+  const sanitized = patientName.trim().replace(/\s+/g, '_');
+  return sanitized ? `${sanitized}.${format}` : `invoice.${format}`;
+}
 
 export default function AppointmentDetailPage() {
   const { id } = useParams();
   const appointmentId = Number(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const [procedureFailures, setProcedureFailures] = useState<ProcedureAttachFailure[]>(
+    (location.state as { procedureFailures?: ProcedureAttachFailure[] } | null)?.procedureFailures ?? [],
+  );
   const [appointment, setAppointment] = useState<AppointmentResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [invoiceFormat, setInvoiceFormat] = useState<InvoiceFormat>('pdf');
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   const loadAppointment = useCallback(async () => {
     setLoading(true);
@@ -54,9 +68,33 @@ export default function AppointmentDetailPage() {
   const doctorName = appointment?.doctor
     ? `${appointment.doctor.firstName ?? ''} ${appointment.doctor.lastName ?? ''}`.trim() || 'Unknown doctor'
     : 'Unknown doctor';
-  const patientName = appointment?.patient
-    ? `${appointment.patient.name ?? ''} ${appointment.patient.lastName ?? ''}`.trim() || 'Unknown patient'
-    : 'Unknown patient';
+  const rawPatientName = appointment?.patient
+    ? `${appointment.patient.name ?? ''} ${appointment.patient.lastName ?? ''}`.trim()
+    : '';
+  const patientName = rawPatientName || 'Unknown patient';
+
+  async function handleDownloadInvoice() {
+    if (!appointment) {
+      return;
+    }
+    setDownloadingInvoice(true);
+    setError('');
+    try {
+      const blob = await downloadInvoice(appointment.id, invoiceFormat, user!.token);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = buildInvoiceFilename(rawPatientName, invoiceFormat);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
@@ -72,6 +110,35 @@ export default function AppointmentDetailPage() {
         </div>
       )}
 
+      {procedureFailures.length > 0 && (
+        <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold">
+                The appointment was created, but {procedureFailures.length === 1 ? 'a procedure' : 'some procedures'}{' '}
+                failed to attach:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {procedureFailures.map((failure, idx) => (
+                  <li key={idx}>
+                    <span className="font-medium">{failure.procedureName}</span> — {failure.message}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-amber-700">Retry attaching these manually from procedure management.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProcedureFailures([])}
+              aria-label="Dismiss"
+              className="text-amber-500 hover:text-amber-700 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="rounded-2xl bg-white shadow-md p-12 text-center text-sm text-gray-500">
           Loading appointment…
@@ -79,7 +146,7 @@ export default function AppointmentDetailPage() {
       ) : !appointment ? null : (
         <>
           <div className="rounded-2xl bg-white shadow-md p-8 mb-6">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-semibold text-gray-800">
@@ -100,7 +167,30 @@ export default function AppointmentDetailPage() {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {appointment.status === 'Completed' && (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={invoiceFormat}
+                      onChange={(e) => setInvoiceFormat(e.target.value as InvoiceFormat)}
+                      disabled={downloadingInvoice}
+                      aria-label="Invoice format"
+                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <option value="pdf">PDF</option>
+                      <option value="docx">DOCX</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => void handleDownloadInvoice()}
+                      disabled={downloadingInvoice}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      {downloadingInvoice ? 'Downloading…' : 'Download Invoice'}
+                    </button>
+                  </div>
+                )}
                 {appointment.status === 'Pending' && (
                   <Link
                     to={`/appointments/${appointment.id}/edit`}
@@ -163,18 +253,18 @@ export default function AppointmentDetailPage() {
                 {appointment.procedures.map((proc) => (
                   <div key={proc.procedureId} className="flex items-center justify-between py-3">
                     <span className="text-sm font-medium text-gray-800">{proc.procedureName}</span>
-                    <span className="text-sm text-gray-600">${proc.procedurePrice.toFixed(2)}</span>
+                    <span className="text-sm text-gray-600">{formatCurrency(proc.procedurePrice)}</span>
                   </div>
                 ))}
               </div>
             )}
             <div className="mt-4 border-t border-gray-100 pt-4 flex items-center justify-between">
               <span className="text-sm text-gray-500">Discount</span>
-              <span className="text-sm text-gray-800">{appointment.discount}%</span>
+              <span className="text-sm text-gray-800">{formatCurrency(appointment.discount)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Total Cost</span>
-              <span className="text-sm font-semibold text-gray-900">${appointment.totalCost.toFixed(2)}</span>
+              <span className="text-sm font-semibold text-gray-900">{formatCurrency(appointment.totalCost)}</span>
             </div>
           </div>
 

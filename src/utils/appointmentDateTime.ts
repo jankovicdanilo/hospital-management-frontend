@@ -2,6 +2,50 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
+/** The clinic's IANA timezone, matching ClinicSettings.TimeZoneId on the backend. */
+export const CLINIC_TIME_ZONE = 'Europe/Podgorica';
+
+/** How far `timeZone`'s local wall clock is ahead of UTC at the given instant, in ms. */
+function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+  return asUtc - date.getTime();
+}
+
+/**
+ * Converts a wall-clock date + time-of-day in `timeZone` (e.g. the clinic's business hours)
+ * into the real UTC instant it represents — accounts for that zone's DST rules instead of
+ * assuming the browser runs in the same timezone.
+ */
+function zonedWallTimeToUtc(dateIso: string, timeStr: string, timeZone: string): Date {
+  const asIfUtc = new Date(`${dateIso}T${timeStr}Z`);
+  const offsetMs = getTimeZoneOffsetMs(asIfUtc, timeZone);
+  return new Date(asIfUtc.getTime() - offsetMs);
+}
+
+/** Formats a real instant as its "HH:mm:ss" wall-clock time in `timeZone`. */
+export function formatTimeOfDayInZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+  return `${get('hour')}:${get('minute')}:${get('second')}`;
+}
+
 export function parseDurationToMinutes(duration: string): number {
   const [h = '0', m = '0', s = '0'] = duration.split(':');
   return Number(h) * 60 + Number(m) + Number(s) / 60;
@@ -27,12 +71,16 @@ export function minutesToDurationString(totalMinutes: number): string {
   return `${pad(h)}:${pad(m)}:00`;
 }
 
-/** Parses a slot time string that is either a full ISO datetime or a bare "HH:mm:ss" time-of-day. */
+/**
+ * Parses a slot time string that is either a full ISO datetime or a bare "HH:mm:ss" time-of-day.
+ * Bare time-of-day values are clinic business hours, so they're interpreted in the clinic's own
+ * timezone rather than the browser's ambient local timezone.
+ */
 export function parseSlotTime(dateIso: string, timeStr: string): Date {
   if (timeStr.includes('T')) {
     return new Date(timeStr);
   }
-  return new Date(`${dateIso}T${timeStr}`);
+  return zonedWallTimeToUtc(dateIso, timeStr, CLINIC_TIME_ZONE);
 }
 
 /** Formats a Date as a UTC ISO string for the backend (e.g. "2026-08-14T10:00:00Z"). */

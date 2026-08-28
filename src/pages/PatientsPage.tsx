@@ -10,7 +10,7 @@ import StatCard from '../components/StatCard';
 
 function formatDate(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -120,6 +120,9 @@ export default function PatientsPage() {
           emptyMessage="No patients found."
           actions={(p) => (
               <>
+                <Link to={`/patients/${p.id}/history`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  History
+                </Link>
                 <Link to={`/patients/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                   Edit
                 </Link>
