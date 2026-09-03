@@ -6,7 +6,6 @@ fetching and updating data.
 
 Before starting, read:
 - [API conventions](.claude/architecture/instructions/api-conventions.md)
-- [SearchableSelect component](.claude/prompts/searchable-select.md)
 
 - Main view: a true time-grid week view (Monday–Friday), similar to
   Outlook/Google Calendar — hours listed down the left side, each
@@ -43,10 +42,11 @@ Before starting, read:
       selected, fetch unfiltered and filter client-side — don't
       assume the backend's doctorId filter accepts multiple values.
     - "Patient" — single-select, using the new SearchableSelect
-      component (type to search, 300ms debounce, minimum 3 characters
-      before searching, backed by GET /api/patient's search param).
-      Passed to the backend as a filter on the week fetch (the list
-      endpoint supports patientId directly).
+      component (backed by GET /api/patient's search param); before
+      any search is typed, GET /api/patient/popular?count=5 is wired
+      to fetchPopularOptions as the default list. Passed to the
+      backend as a filter on the week fetch (the list endpoint
+      supports patientId directly).
     - "Procedure" — single-select. The appointment list endpoint has
       no procedure filter param, so this filters client-side against
       each already-fetched appointment's `procedures` array. Note
@@ -81,11 +81,12 @@ Before starting, read:
   read-only sections for procedures performed and treatment (if any)
   — no editing of procedures/treatment on this pass.
 - "New Appointment" action opens a create page:
-    1. Pick a doctor, via the new SearchableSelect component (type to
-       search, 300ms debounce, minimum 3 characters before searching,
-       calls GET /api/doctor with the search query param and a larger
+    1. Pick a doctor, via the new SearchableSelect component
+       (calls GET /api/doctor with the search query param and a larger
        pageSize e.g. 100 rather than paginating within the dropdown
-       itself)
+       itself). Before any search is typed, show the top 5 most-booked
+       doctors via GET /api/doctor/popular?count=5 as the default list
+       (wired through SearchableSelect's fetchPopularOptions prop).
     2. Pick a date, via a custom date picker component — not the
        native `<input type="date">`, which cannot disable specific
        weekdays. As soon as a doctor is picked, fetch their weekly
@@ -105,7 +106,8 @@ Before starting, read:
        appointment's start time.
     4. Pick a patient, via the same SearchableSelect component used
        for the doctor picker, backed by GET /api/patient's search
-       param
+       param, with GET /api/patient/popular?count=5 wired to
+       fetchPopularOptions for the default (pre-search) list
     5. Pick a slot (start time)
     6. Duration is a separate, user-editable field — hours and minutes
        inputs — defaulting to the picked slot's own length but freely

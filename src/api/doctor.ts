@@ -27,6 +27,18 @@ export async function getDoctors(
   return response.json() as Promise<{ items: DoctorResponseDto[]; totalCount: number }>;
 }
 
+export async function getPopularDoctors(count: number, token: string): Promise<DoctorResponseDto[]> {
+  const response = await fetch(`${QUERY_BASE_URL}/api/doctor/popular?count=${count}`, {
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<DoctorResponseDto[]>;
+}
+
 export async function getDoctorById(id: number, token: string): Promise<DoctorResponseDto> {
   const response = await fetch(`${QUERY_BASE_URL}/api/doctor/${id}`, {
     headers: authHeaders(token),

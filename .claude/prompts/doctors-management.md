@@ -8,8 +8,7 @@ Before starting, read:
 
 - A table listing all doctors (first name, last name, specialization, email, phone),
   using the shared DataTable component with pagination
-- A search box above the table (300ms debounce, minimum 3 characters
-  before searching), filtering server-side via GET /api/doctor's
+- A search box above the table, filtering server-side via GET /api/doctor's
   search query param (matches first or last name)
 - Edit and Delete buttons on each row
 - Delete requires a confirm step before the actual delete call

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getDoctors } from '../api/doctor';
-import { getPatients } from '../api/patient';
+import { getDoctors, getPopularDoctors } from '../api/doctor';
+import { getPatients, getPopularPatients } from '../api/patient';
 import { getProcedures } from '../api/procedure';
 import { getDoctorSchedulesByDoctor } from '../api/doctorSchedule';
 import {
@@ -14,12 +14,15 @@ import {
   updateAppointment,
 } from '../api/appointment';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
+import type { DoctorResponseDto } from '../types/doctor';
+import type { PatientListDto } from '../types/patient';
 import type { ProcedureListDto } from '../types/procedure';
 import type { TimeSlotDto } from '../types/appointment';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import DatePicker from '../components/DatePicker';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
+import type { SearchableSelectOption } from '../components/SearchableSelect';
 import type { ProcedureAttachFailure } from '../types/appointment';
 import {
   CLINIC_TIME_ZONE,
@@ -50,6 +53,17 @@ const WEEK_ORDER: DayOfWeek[] = [
   'Saturday',
   'Sunday',
 ];
+
+function doctorToOption(d: DoctorResponseDto): SearchableSelectOption {
+  return {
+    id: d.id,
+    label: `${d.firstName} ${d.lastName}${d.specialization ? ` — ${d.specialization}` : ''}`,
+  };
+}
+
+function patientToOption(p: PatientListDto): SearchableSelectOption {
+  return { id: p.id, label: `${p.name} ${p.lastName}` };
+}
 
 interface FormState {
   doctorId: string;
@@ -569,12 +583,10 @@ export default function AppointmentFormPage() {
                   value={form.doctorId ? Number(form.doctorId) : null}
                   onChange={(value) => handleDoctorChange(value == null ? '' : String(value))}
                   fetchOptions={(search) =>
-                    getDoctors(1, 100, user!.token, search).then((data) =>
-                      data.items.map((d) => ({
-                        id: d.id,
-                        label: `${d.firstName} ${d.lastName}${d.specialization ? ` — ${d.specialization}` : ''}`,
-                      })),
-                    )
+                    getDoctors(1, 100, user!.token, search).then((data) => data.items.map(doctorToOption))
+                  }
+                  fetchPopularOptions={() =>
+                    getPopularDoctors(5, user!.token).then((doctors) => doctors.map(doctorToOption))
                   }
                   placeholder="Search for a doctor…"
                   initialLabel={initialDoctorLabel}
@@ -631,9 +643,10 @@ export default function AppointmentFormPage() {
                   setForm((prev) => ({ ...prev, patientId: value == null ? '' : String(value) }))
                 }
                 fetchOptions={(search) =>
-                  getPatients(1, 100, user!.token, search).then((data) =>
-                    data.items.map((p) => ({ id: p.id, label: `${p.name} ${p.lastName}` })),
-                  )
+                  getPatients(1, 100, user!.token, search).then((data) => data.items.map(patientToOption))
+                }
+                fetchPopularOptions={() =>
+                  getPopularPatients(5, user!.token).then((patients) => patients.map(patientToOption))
                 }
                 placeholder="Search for a patient…"
                 initialLabel={initialPatientLabel}

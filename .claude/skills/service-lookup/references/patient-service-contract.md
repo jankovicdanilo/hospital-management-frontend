@@ -5,6 +5,8 @@
 QueryService:
 - GET /api/patient?pageNumber={n}&pageSize={n} → PagedResult<PatientListDto> (list, paginated)
 - GET /api/patient/{id} → PatientGetByIdDto
+- GET /api/patient/popular?count={n} → PatientListDto[] (top N patients by number of appointments, most-booked first; default count is 5)
+
 
 CommandService:
 - POST /api/patient, body PatientCreateRequestDto → PatientCreateResponseDto

@@ -1,26 +1,10 @@
 # SearchableSelect Component
 
-If `src/components/SearchableSelect.tsx` already exists, import and
-use it — do not redefine this per-feature.
-
-If it does not exist yet, create it with this shape:
-
 Single-select dropdown for choosing exactly one option from a large
 or paginated dataset that isn't fully loaded client-side — searches
 the backend rather than filtering an already-fetched list (unlike
 MultiSelectDropdown, which filters client-side because its full
 dataset is already loaded upfront).
-
-## Props
-
-- `value: string | number | null` — the currently selected option's id
-- `onChange: (value: string | number | null) => void`
-- `fetchOptions: (search: string) => Promise<{ id: string | number; label: string }[]>`
-  — a function the component calls to fetch matching options; the
-  calling feature wires this to the correct endpoint (e.g.
-  `GET /api/doctor?search=...`, `GET /api/patient?search=...`)
-- `placeholder?: string`
-- `disabled?: boolean`
 
 ## Behavior
 

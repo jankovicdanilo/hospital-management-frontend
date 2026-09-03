@@ -3,17 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Stethoscope, User, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors } from '../api/doctor';
-import { getPatients } from '../api/patient';
+import { getPatients, getPopularPatients } from '../api/patient';
 import { getProcedures } from '../api/procedure';
 import { getAppointmentsByWeek, updateAppointmentStatus } from '../api/appointment';
 import { getErrorMessage } from '../api/apiErrors';
 import type { AppointmentListResponseDto } from '../types/appointment';
 import type { DoctorResponseDto } from '../types/doctor';
+import type { PatientListDto } from '../types/patient';
 import type { ProcedureListDto } from '../types/procedure';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
 import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../utils/appointmentDateTime';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
+import type { SearchableSelectOption } from '../components/SearchableSelect';
+
+function patientToOption(p: PatientListDto): SearchableSelectOption {
+  return { id: p.id, label: `${p.name} ${p.lastName}` };
+}
 
 const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 20;
@@ -324,9 +330,10 @@ export default function AppointmentsPage() {
                   value={patientFilterId ? Number(patientFilterId) : null}
                   onChange={(value) => setPatientFilterId(value == null ? '' : String(value))}
                   fetchOptions={(search) =>
-                    getPatients(1, 100, user!.token, search).then((data) =>
-                      data.items.map((p) => ({ id: p.id, label: `${p.name} ${p.lastName}` })),
-                    )
+                    getPatients(1, 100, user!.token, search).then((data) => data.items.map(patientToOption))
+                  }
+                  fetchPopularOptions={() =>
+                    getPopularPatients(5, user!.token).then((patients) => patients.map(patientToOption))
                   }
                   placeholder="All Patients"
                 />
