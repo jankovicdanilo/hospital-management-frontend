@@ -40,7 +40,12 @@ export default function SearchableSelect({
   const [options, setOptions] = useState<SearchableSelectOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(value != null ? initialLabel ?? null : null);
+  // Only set by handleSelect/handleClear — a fresh selection always takes
+  // precedence over `initialLabel`. Falling back to `initialLabel` (below,
+  // where displayLabel is computed) instead of seeding this from props means
+  // it stays correct even when `value`/`initialLabel` arrive asynchronously
+  // after mount (e.g. pre-filling an edit form once the record has loaded).
+  const [manualLabel, setManualLabel] = useState<string | null>(null);
   const [popularOptions, setPopularOptions] = useState<SearchableSelectOption[]>([]);
   const [loadingPopular, setLoadingPopular] = useState(false);
   const [popularError, setPopularError] = useState('');
@@ -64,7 +69,7 @@ export default function SearchableSelect({
 
   useEffect(() => {
     if (value == null) {
-      setSelectedLabel(null);
+      setManualLabel(null);
     }
   }, [value]);
 
@@ -139,6 +144,11 @@ export default function SearchableSelect({
       .then((results) => {
         if (mountedRef.current) {
           setPopularOptions(results);
+          // Only cache on success — a failed request (e.g. a transient
+          // network blip) should be retried the next time the dropdown
+          // opens, not shown as a permanent error for the component's
+          // lifetime.
+          setPopularLoaded(true);
         }
       })
       .catch(() => {
@@ -148,7 +158,6 @@ export default function SearchableSelect({
       })
       .finally(() => {
         if (mountedRef.current) {
-          setPopularLoaded(true);
           setLoadingPopular(false);
         }
       });
@@ -171,7 +180,7 @@ export default function SearchableSelect({
   }
 
   function handleSelect(option: SearchableSelectOption) {
-    setSelectedLabel(option.label);
+    setManualLabel(option.label);
     onChange(option.id);
     setOpen(false);
     setQuery('');
@@ -179,31 +188,44 @@ export default function SearchableSelect({
 
   function handleClear(e: MouseEvent) {
     e.stopPropagation();
-    setSelectedLabel(null);
+    setManualLabel(null);
     onChange(null);
   }
 
+  const displayLabel = value == null ? null : (manualLabel ?? initialLabel ?? null);
+
   return (
     <div className="relative" ref={containerRef}>
-      <button
-        id={id}
-        type="button"
-        onClick={toggleOpen}
-        disabled={disabled}
-        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed ${
-          hasError ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
-        }`}
+      <div
+        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-blue-500 ${
+          disabled ? 'opacity-60' : ''
+        } ${hasError ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'}`}
       >
-        <span className={`truncate ${selectedLabel ? 'text-gray-800' : 'text-gray-400'}`}>
-          {selectedLabel ?? placeholder}
-        </span>
+        <button
+          id={id}
+          type="button"
+          onClick={toggleOpen}
+          disabled={disabled}
+          className="flex-1 truncate text-left outline-none disabled:cursor-not-allowed"
+        >
+          <span className={displayLabel ? 'text-gray-800' : 'text-gray-400'}>
+            {displayLabel ?? placeholder}
+          </span>
+        </button>
         <span className="flex shrink-0 items-center gap-1.5">
-          {selectedLabel && !disabled && (
-            <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" onClick={handleClear} />
+          {displayLabel && !disabled && (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear selection"
+              className="rounded p-0.5 text-gray-400 outline-none hover:text-gray-600 focus:ring-1 focus:ring-blue-500"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           )}
           <ChevronDown className="h-4 w-4 text-gray-400" />
         </span>
-      </button>
+      </div>
 
       {open && (
         <div className="absolute z-20 mt-2 w-full min-w-[240px] rounded-2xl border border-gray-100 bg-white p-2 shadow-md">

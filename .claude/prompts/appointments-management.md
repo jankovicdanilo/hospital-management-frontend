@@ -6,6 +6,7 @@ fetching and updating data.
 
 Before starting, read:
 - [API conventions](.claude/architecture/instructions/api-conventions.md)
+- [SearchableSelect component](.claude/prompts/searchable-select.md)
 
 - Main view: a true time-grid week view (Monday–Friday), similar to
   Outlook/Google Calendar — hours listed down the left side, each

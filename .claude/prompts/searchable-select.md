@@ -21,3 +21,10 @@ dataset is already loaded upfront).
   narrow enough that more than 100 results come back, that's a signal
   the user should narrow their search further, not something this
   component needs to paginate through
+- Accepts an optional `fetchPopularOptions` callback: before any
+  search is typed, the dropdown shows this default list instead of
+  the "type at least 3 characters" hint (e.g. wired to a
+  `GET /.../popular?count=5` endpoint). Loads lazily the first time
+  the dropdown opens and is cached for the component's lifetime once
+  it succeeds; a failed load is not cached, so it retries next time
+  the dropdown opens.

@@ -8,9 +8,7 @@ import type { PatientListDto } from '../types/patient';
 import DataTable from '../components/DataTable';
 import Avatar from '../components/Avatar';
 import StatCard from '../components/StatCard';
-
-const SEARCH_MIN_LENGTH = 3;
-const SEARCH_DEBOUNCE_MS = 300;
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 
 function formatDate(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
@@ -31,20 +29,9 @@ export default function PatientsPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const pageSize = 5;
   const [totalCount, setTotalCount] = useState(0);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmed = searchInput.trim();
-      setSearch(trimmed.length >= SEARCH_MIN_LENGTH ? trimmed : '');
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  useEffect(() => {
-    setPageNumber(1);
-  }, [search]);
+  const { searchInput, setSearchInput, search } = useDebouncedSearch({
+    onChange: () => setPageNumber(1),
+  });
 
   const loadPatients = useCallback(async () => {
     setLoading(true);

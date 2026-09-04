@@ -14,15 +14,12 @@ import {
   updateAppointment,
 } from '../api/appointment';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
-import type { DoctorResponseDto } from '../types/doctor';
-import type { PatientListDto } from '../types/patient';
 import type { ProcedureListDto } from '../types/procedure';
 import type { TimeSlotDto } from '../types/appointment';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import DatePicker from '../components/DatePicker';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
-import type { SearchableSelectOption } from '../components/SearchableSelect';
 import type { ProcedureAttachFailure } from '../types/appointment';
 import {
   CLINIC_TIME_ZONE,
@@ -34,6 +31,7 @@ import {
   toApiDateTimeString,
 } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
+import { doctorToOption, patientToOption } from '../utils/searchableSelectOptions';
 
 const JS_DAY_TO_NAME: DayOfWeek[] = [
   'Sunday',
@@ -53,17 +51,6 @@ const WEEK_ORDER: DayOfWeek[] = [
   'Saturday',
   'Sunday',
 ];
-
-function doctorToOption(d: DoctorResponseDto): SearchableSelectOption {
-  return {
-    id: d.id,
-    label: `${d.firstName} ${d.lastName}${d.specialization ? ` — ${d.specialization}` : ''}`,
-  };
-}
-
-function patientToOption(p: PatientListDto): SearchableSelectOption {
-  return { id: p.id, label: `${p.name} ${p.lastName}` };
-}
 
 interface FormState {
   doctorId: string;
