@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { deleteDoctor, getDoctors } from '../api/doctor';
 import { getErrorMessage } from '../api/apiErrors';
@@ -8,6 +9,7 @@ import DataTable from '../components/DataTable';
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import StatCard from '../components/StatCard';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 
 export default function DoctorsPage() {
   const { user } = useAuth();
@@ -19,12 +21,15 @@ export default function DoctorsPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const pageSize = 5;
   const [totalCount, setTotalCount] = useState(0);
+  const { searchInput, setSearchInput, search } = useDebouncedSearch({
+    onChange: () => setPageNumber(1),
+  });
 
   const loadDoctors = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await getDoctors(pageNumber, pageSize, user!.token);
+      const data = await getDoctors(pageNumber, pageSize, user!.token, search || undefined);
       setDoctors(data.items);
       setTotalCount(data.totalCount);
     } catch (err) {
@@ -32,7 +37,7 @@ export default function DoctorsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, pageNumber]);
+  }, [user, pageNumber, search]);
 
   useEffect(() => {
     void loadDoctors();
@@ -86,6 +91,17 @@ export default function DoctorsPage() {
               ? '0 of 0'
               : `${(pageNumber - 1) * pageSize + 1}–${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount}`
           }
+        />
+      </div>
+
+      <div className="relative mb-4 max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search by first or last name…"
+          className="w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 

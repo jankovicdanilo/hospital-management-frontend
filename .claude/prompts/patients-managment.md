@@ -8,6 +8,8 @@ Before starting, read:
 
 - A table listing all patients (name, last name, email, phone, date of birth),
   using the shared DataTable component with pagination
+- A search box above the table, filtering server-side via GET /api/patient's
+  search query param (matches name or last name)
 - Edit and Delete buttons on each row
 - Delete requires a confirm step before the actual delete call
 - An "Add Patient" action, opening a separate create page

@@ -3,17 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Stethoscope, User, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors } from '../api/doctor';
-import { getPatients } from '../api/patient';
+import { getPatients, getPopularPatients } from '../api/patient';
 import { getProcedures } from '../api/procedure';
 import { getAppointmentsByWeek, updateAppointmentStatus } from '../api/appointment';
 import { getErrorMessage } from '../api/apiErrors';
 import type { AppointmentListResponseDto } from '../types/appointment';
 import type { DoctorResponseDto } from '../types/doctor';
-import type { PatientListDto } from '../types/patient';
 import type { ProcedureListDto } from '../types/procedure';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
 import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../utils/appointmentDateTime';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
+import SearchableSelect from '../components/SearchableSelect';
+import { patientToOption } from '../utils/searchableSelectOptions';
 
 const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 20;
@@ -122,7 +123,6 @@ export default function AppointmentsPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const [doctors, setDoctors] = useState<DoctorResponseDto[]>([]);
-  const [patients, setPatients] = useState<PatientListDto[]>([]);
   const [procedures, setProcedures] = useState<ProcedureListDto[]>([]);
   const [doctorFilterIds, setDoctorFilterIds] = useState<string[]>([]);
   const [patientFilterId, setPatientFilterId] = useState('');
@@ -137,15 +137,10 @@ export default function AppointmentsPage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([
-      getDoctors(1, 100, user!.token),
-      getPatients(1, 100, user!.token),
-      getProcedures(1, 100, user!.token),
-    ])
-      .then(([doctorData, patientData, procedureData]) => {
+    Promise.all([getDoctors(1, 100, user!.token), getProcedures(1, 100, user!.token)])
+      .then(([doctorData, procedureData]) => {
         if (!cancelled) {
           setDoctors(doctorData.items);
-          setPatients(patientData.items);
           setProcedures(procedureData.items);
         }
       })
@@ -324,19 +319,20 @@ export default function AppointmentsPage() {
               <label htmlFor="patientFilter" className="text-sm font-medium text-gray-600">
                 Patient
               </label>
-              <select
-                id="patientFilter"
-                value={patientFilterId}
-                onChange={(e) => setPatientFilterId(e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Patients</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.lastName}
-                  </option>
-                ))}
-              </select>
+              <div className="w-48">
+                <SearchableSelect
+                  id="patientFilter"
+                  value={patientFilterId ? Number(patientFilterId) : null}
+                  onChange={(value) => setPatientFilterId(value == null ? '' : String(value))}
+                  fetchOptions={(search) =>
+                    getPatients(1, 100, user!.token, search).then((data) => data.items.map(patientToOption))
+                  }
+                  fetchPopularOptions={() =>
+                    getPopularPatients(5, user!.token).then((patients) => patients.map(patientToOption))
+                  }
+                  placeholder="All Patients"
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-2">

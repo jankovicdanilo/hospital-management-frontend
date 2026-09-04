@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Search } from 'lucide-react';
 
 export interface MultiSelectOption {
   value: string;
@@ -22,6 +22,7 @@ export default function MultiSelectDropdown({
   placeholder,
 }: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,6 +43,17 @@ export default function MultiSelectDropdown({
       document.removeEventListener('keydown', handleEscape);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setSearch('');
+    }
+  }, [open]);
+
+  const filteredOptions = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return term ? options.filter((o) => o.label.toLowerCase().includes(term)) : options;
+  }, [options, search]);
 
   function toggleValue(value: string) {
     if (selected.includes(value)) {
@@ -72,11 +84,22 @@ export default function MultiSelectDropdown({
 
       {open && (
         <div className="absolute z-20 mt-2 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-md">
+          <div className="relative mb-2">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="w-full rounded-lg border border-gray-300 py-1.5 pl-8 pr-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <div className="max-h-60 overflow-y-auto">
-            {options.length === 0 ? (
+            {filteredOptions.length === 0 ? (
               <p className="px-2 py-1.5 text-sm text-gray-400">No options.</p>
             ) : (
-              options.map((option) => (
+              filteredOptions.map((option) => (
                 <label
                   key={option.value}
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50"

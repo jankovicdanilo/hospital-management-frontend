@@ -3,8 +3,9 @@
 ## Endpoints
 
 QueryService:
-- GET /api/doctor?pageNumber={n}&pageSize={n} → PagedResult<DoctorResponseDto> (list, paginated)
+- GET /api/doctor?pageNumber={n}&pageSize={n}&search={s} → PagedResult<DoctorResponseDto> (list, paginated; optional `search` matches first or last name)
 - GET /api/doctor/{id} → DoctorResponseDto
+- GET /api/doctor/popular?count={n} → DoctorResponseDto[] (top N doctors by number of appointments, most-booked first; default count is 5)
 
 CommandService:
 - POST /api/doctor, body DoctorCreateRequestDto → DoctorResponseDto

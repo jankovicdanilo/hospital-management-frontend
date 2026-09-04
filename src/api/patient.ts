@@ -11,8 +11,27 @@ import { throwApiError, authHeaders } from './apiErrors';
 const QUERY_BASE_URL = import.meta.env.VITE_QUERY_SERVICE_SERVICE_URL as string;
 const COMMAND_BASE_URL = import.meta.env.VITE_COMMAND_SERVICE_SERVICE_URL as string;
 
-export async function getPatients(pageNumber: number, pageSize: number, token: string): Promise<{ items: PatientListDto[]; totalCount: number }> {
-  const response = await fetch(`${QUERY_BASE_URL}/api/patient?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+export async function getPatients(
+  pageNumber: number,
+  pageSize: number,
+  token: string,
+  search?: string,
+): Promise<{ items: PatientListDto[]; totalCount: number }> {
+  const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+  const response = await fetch(
+    `${QUERY_BASE_URL}/api/patient?pageNumber=${pageNumber}&pageSize=${pageSize}${searchParam}`,
+    { headers: authHeaders(token) },
+  );
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<{ items: PatientListDto[]; totalCount: number }>;
+}
+
+export async function getPopularPatients(count: number, token: string): Promise<PatientListDto[]> {
+  const response = await fetch(`${QUERY_BASE_URL}/api/patient/popular?count=${count}`, {
     headers: authHeaders(token),
   });
 
@@ -20,7 +39,7 @@ export async function getPatients(pageNumber: number, pageSize: number, token: s
     return throwApiError(response);
   }
 
-  return response.json() as Promise<{ items: PatientListDto[]; totalCount: number }>;
+  return response.json() as Promise<PatientListDto[]>;
 }
 
 export async function getPatientById(id: number, token: string): Promise<PatientGetByIdDto> {
