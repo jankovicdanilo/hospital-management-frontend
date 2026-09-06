@@ -36,6 +36,25 @@ Before starting, read:
   without a rewrite, same principle as the Doctor detail page — a
   simple stacked-sections layout, not a rigid layout tied to exactly
   these two pieces of content
+- A "Summary" button in the profile header card (near the patient's
+  name/info, top of the page). Clicking it calls
+  GET /api/appointment/patient/{patientId}/summary. While the request
+  is in flight (typically 1-2 seconds), disable the button and show a
+  small loading indicator on/near it.
+- Once loaded, a new card appears between the profile header card and
+  the Appointment History section, showing only the summary
+  description text
+- Cache the summary client-side for the current page visit — once
+  loaded successfully for this patient, clicking the button again
+  does not re-fetch; it just re-shows the already-loaded summary. If
+  a request fails, do not cache the failure — clicking the button
+  again retries.
+- On failure, show an inline error in place of where the summary card
+  would appear (e.g. "Failed to generate summary — try again"), not a
+  page-wide banner. Both known failure codes (INVALID_PATIENT_ID,
+  SUMMARY_GENERATION_FAILED) can share the same generic-looking error
+  message, since neither is something the user can resolve themselves
+  beyond retrying.
 
 ## Styling
 

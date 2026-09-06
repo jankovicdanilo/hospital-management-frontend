@@ -116,3 +116,9 @@ export interface TimeSlotDto {
   start: string;
   end: string;
 }
+
+export interface PatientSummaryResponseDto {
+  patientId: number;
+  patientName: string | null;
+  summary: string;
+}
