@@ -17,6 +17,7 @@ conventions.
 - PATCH /api/appointment/status, body AppointmentStatusUpdateDto → success/failure, message only
 - GET /api/appointment/free-slots?doctorId={id}&date={date} → TimeSlotDto[]
 - GET /api/appointment/patient/{patientId}/history → AppointmentResponseDto[]
+- GET /api/appointment/patient/{patientId}/summary → PatientSummaryResponseDto
 
 ## DTOs
 
@@ -40,6 +41,8 @@ PatientResponseDto (nested on AppointmentResponseDto.patient): { id: number, nam
 AppointmentProcedureResponseDto: { appointmentId: number, procedureId: number, procedureName: string, procedurePrice: number }
 
 TreatmentResponseDto: { id: number, appointmentId: number, description: string, medication: string | null, createdAt: string }
+
+PatientSummaryResponseDto: { patientId: number, patientName: string | null, summary: string }
 
 Note: `duration` (TimeSpan) serializes as a string like "01:00:00" —
 confirm exact format via Swagger before parsing on the frontend.

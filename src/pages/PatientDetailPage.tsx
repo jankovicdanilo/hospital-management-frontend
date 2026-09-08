@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getPatientById } from '../api/patient';
-import { getAppointmentsByPatient } from '../api/appointment';
+import { getAppointmentsByPatient, getPatientSummary } from '../api/appointment';
 import { getErrorMessage } from '../api/apiErrors';
 import type { PatientGetByIdDto } from '../types/patient';
-import type { AppointmentListResponseDto } from '../types/appointment';
+import type { AppointmentListResponseDto, PatientSummaryResponseDto } from '../types/appointment';
 import DataTable from '../components/DataTable';
 import Badge from '../components/Badge';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
@@ -50,6 +51,10 @@ export default function PatientDetailPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
+  const [summary, setSummary] = useState<PatientSummaryResponseDto | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState('');
+
   const loadPatient = useCallback(async () => {
     setPatientLoading(true);
     try {
@@ -82,6 +87,23 @@ export default function PatientDetailPage() {
   useEffect(() => {
     void loadAppointments();
   }, [loadAppointments]);
+
+  async function handleLoadSummary() {
+    if (summary || summaryLoading) {
+      return;
+    }
+
+    setSummaryLoading(true);
+    setSummaryError('');
+    try {
+      const data = await getPatientSummary(patientId, user!.token);
+      setSummary(data);
+    } catch {
+      setSummaryError('Failed to generate summary — try again');
+    } finally {
+      setSummaryLoading(false);
+    }
+  }
 
   // The backend has no status filter on this endpoint, so status filtering is
   // applied client-side against the already-fetched page, the same way it
@@ -120,9 +142,23 @@ export default function PatientDetailPage() {
       ) : !patient ? null : (
         <>
           <div className="rounded-2xl bg-white shadow-md p-8 mb-6">
-            <h1 className="text-2xl font-semibold text-gray-800">
-              {patient.name} {patient.lastName}
-            </h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-2xl font-semibold text-gray-800">
+                {patient.name} {patient.lastName}
+              </h1>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {summaryLoading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
+                <button
+                  type="button"
+                  onClick={handleLoadSummary}
+                  disabled={summaryLoading}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {summaryLoading ? 'Generating…' : 'Summary'}
+                </button>
+              </div>
+            </div>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-100 pt-6">
               <div>
@@ -139,6 +175,19 @@ export default function PatientDetailPage() {
               </div>
             </div>
           </div>
+
+          {summary && (
+            <div className="rounded-2xl bg-white shadow-md p-8 mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Summary</h2>
+              <p className="text-sm text-gray-700 whitespace-pre-line">{summary.summary}</p>
+            </div>
+          )}
+
+          {summaryError && (
+            <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {summaryError}
+            </div>
+          )}
 
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>

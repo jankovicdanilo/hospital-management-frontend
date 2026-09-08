@@ -8,6 +8,7 @@ import type {
   AppointmentStatusUpdateDto,
   AppointmentUpdateRequestDto,
   AppointmentUpdateResponseDto,
+  PatientSummaryResponseDto,
   TimeSlotDto,
 } from '../types/appointment';
 import { throwApiError, authHeaders } from './apiErrors';
@@ -51,6 +52,22 @@ export async function getAppointmentsByPatient(
   }
 
   return response.json() as Promise<{ items: AppointmentListResponseDto[]; totalCount: number }>;
+}
+
+export async function getPatientSummary(
+  patientId: number,
+  token: string,
+): Promise<PatientSummaryResponseDto> {
+  const response = await fetch(
+    `${APPOINTMENT_BASE_URL}/api/appointment/patient/${patientId}/summary`,
+    { headers: authHeaders(token) },
+  );
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<PatientSummaryResponseDto>;
 }
 
 export async function getAppointmentById(id: number, token: string): Promise<AppointmentResponseDto> {
