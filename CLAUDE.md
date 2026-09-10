@@ -81,3 +81,9 @@ If you find two files disagreeing (e.g. an env var name, a type shape,
 a route path), do not silently resolve it by picking one side. Flag
 the discrepancy and ask which one is correct — don't assume the older
 or "example" file is the source of truth.
+
+## GitHub MCP
+
+- When asked to use GitHub MCP tools specifically, use them — don't
+  fall back to git CLI or gh CLI silently. If MCP tools aren't
+  available/fail, say so explicitly instead of substituting local git.
