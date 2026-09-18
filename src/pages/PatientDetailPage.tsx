@@ -54,12 +54,14 @@ export default function PatientDetailPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
-  // Keyed by language so switching the app's language and re-clicking Summary
-  // fetches a fresh translation instead of re-showing the stale cached one.
-  const [summaryByLanguage, setSummaryByLanguage] = useState<Record<string, PatientSummaryResponseDto>>({});
+  // Keyed by patient + language so switching the app's language and
+  // re-clicking Summary fetches a fresh translation instead of re-showing
+  // the stale cached one, and a cached summary never leaks across patients.
+  const [summaryCache, setSummaryCache] = useState<Record<string, PatientSummaryResponseDto>>({});
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState('');
-  const summary = summaryByLanguage[i18n.language];
+  const summaryCacheKey = `${patientId}:${i18n.language}`;
+  const summary = summaryCache[summaryCacheKey];
 
   const loadPatient = useCallback(async () => {
     setPatientLoading(true);
@@ -99,12 +101,12 @@ export default function PatientDetailPage() {
       return;
     }
 
-    const language = i18n.language;
+    const cacheKey = summaryCacheKey;
     setSummaryLoading(true);
     setSummaryError('');
     try {
-      const data = await getPatientSummary(patientId, language, user!.token);
-      setSummaryByLanguage((prev) => ({ ...prev, [language]: data }));
+      const data = await getPatientSummary(patientId, i18n.language, user!.token);
+      setSummaryCache((prev) => ({ ...prev, [cacheKey]: data }));
     } catch {
       setSummaryError(t('patientDetail.summaryError'));
     } finally {

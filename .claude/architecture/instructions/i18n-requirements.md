@@ -7,7 +7,7 @@
 - English and Montenegrin translations must stay in sync — no key exists in one language but not the other
 
 ## Status translation
-- Appointment `Status` values (Completed, Pending, Cancelled, Missed,
+- Appointment `Status` values (Completed, Pending, Cancelled, Missed)
   must display translated wherever they appear in the UI —
   Appointments list, Patient History table, Appointment Detail, Doctor
   schedule, etc.
