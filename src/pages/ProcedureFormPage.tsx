@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { createProcedure, getProcedureById, updateProcedure } from '../api/procedure';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
@@ -19,6 +20,7 @@ export default function ProcedureFormPage() {
   const isEdit = Boolean(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -68,14 +70,14 @@ export default function ProcedureFormPage() {
   function validate(): boolean {
     const errors: FormErrors = {};
     if (!form.name.trim()) {
-      errors.name = 'Name is required.';
+      errors.name = t('common.nameRequired');
     }
 
     const price = Number(form.price);
     if (!form.price.trim() || Number.isNaN(price)) {
-      errors.price = 'Price is required.';
+      errors.price = t('procedureForm.priceRequired');
     } else if (price <= 0) {
-      errors.price = 'Price must be greater than 0.';
+      errors.price = t('procedureForm.priceInvalid');
     }
 
     setFieldErrors(errors);
@@ -127,10 +129,10 @@ export default function ProcedureFormPage() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
-          {isEdit ? 'Edit Procedure' : 'Add Procedure'}
+          {isEdit ? t('procedureForm.editTitle') : t('procedureForm.addTitle')}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {isEdit ? 'Update the procedure details below.' : 'Enter the new procedure’s details.'}
+          {isEdit ? t('procedureForm.editSubtitle') : t('procedureForm.addSubtitle')}
         </p>
       </div>
 
@@ -142,12 +144,12 @@ export default function ProcedureFormPage() {
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-sm text-gray-500">Loading procedure…</div>
+          <div className="py-12 text-center text-sm text-gray-500">{t('procedureForm.loading')}</div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
-                Name
+                {t('common.name')}
               </label>
               <input
                 id="name"
@@ -163,7 +165,7 @@ export default function ProcedureFormPage() {
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="price">
-                Price
+                {t('common.price')}
               </label>
               <input
                 id="price"
@@ -183,14 +185,14 @@ export default function ProcedureFormPage() {
                 to="/procedures"
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </Link>
               <button
                 type="submit"
                 disabled={saving}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Procedure'}
+                {saving ? t('common.saving') : isEdit ? t('common.saveChanges') : t('procedureForm.addTitle')}
               </button>
             </div>
           </form>

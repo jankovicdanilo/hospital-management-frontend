@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface Column<T> {
     header: string;
@@ -49,6 +50,7 @@ export default function DataTable<T>({
                                          pagination,
                                          onRowClick,
                                      }: DataTableProps<T>) {
+    const { t } = useTranslation();
     const totalPages = pagination
         ? Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))
         : 1;
@@ -56,7 +58,7 @@ export default function DataTable<T>({
     return (
         <div className="rounded-2xl bg-white shadow-md overflow-hidden">
             {loading ? (
-                <div className="px-6 py-12 text-center text-sm text-gray-500">Loading…</div>
+                <div className="px-6 py-12 text-center text-sm text-gray-500">{t('common.loading')}</div>
             ) : rows.length === 0 ? (
                 <div className="px-6 py-12 text-center text-sm text-gray-500">{emptyMessage}</div>
             ) : (
@@ -69,7 +71,7 @@ export default function DataTable<T>({
                             </th>
                         ))}
                         {actions && (
-                            <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
+                            <th className="px-6 py-3 font-medium text-gray-500 text-right">{t('common.actions')}</th>
                         )}
                     </tr>
                     </thead>
@@ -103,7 +105,7 @@ export default function DataTable<T>({
                             type="button"
                             disabled={pagination.pageNumber <= 1}
                             onClick={() => pagination.onPageChange(pagination.pageNumber - 1)}
-                            aria-label="Previous page"
+                            aria-label={t('common.previousPage')}
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronLeft className="h-4 w-4" />
@@ -134,7 +136,7 @@ export default function DataTable<T>({
                             type="button"
                             disabled={pagination.pageNumber >= totalPages}
                             onClick={() => pagination.onPageChange(pagination.pageNumber + 1)}
-                            aria-label="Next page"
+                            aria-label={t('common.nextPage')}
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronRight className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Stethoscope, User, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors } from '../api/doctor';
 import { getPatients, getPopularPatients } from '../api/patient';
@@ -116,6 +117,7 @@ function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[]
 export default function AppointmentsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [appointments, setAppointments] = useState<AppointmentListResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +135,10 @@ export default function AppointmentsPage() {
     dayLabel: string;
     appts: AppointmentListResponseDto[];
   } | null>(null);
+
+  function statusLabel(status: string): string {
+    return t(`status.${status.toLowerCase()}`);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -245,12 +251,12 @@ export default function AppointmentsPage() {
         onChange={(e) => void handleStatusChange(appt, e.target.value as 'Completed' | 'Cancelled')}
         className="rounded border border-white/70 bg-white/70 px-1 py-0.5 text-[10px] font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
       >
-        <option value="Pending">Pending</option>
-        <option value="Completed">Completed</option>
-        <option value="Cancelled">Cancelled</option>
+        <option value="Pending">{statusLabel('Pending')}</option>
+        <option value="Completed">{statusLabel('Completed')}</option>
+        <option value="Cancelled">{statusLabel('Cancelled')}</option>
       </select>
     ) : (
-      <span className="text-[10px] font-medium">{appt.status}</span>
+      <span className="text-[10px] font-medium">{statusLabel(appt.status)}</span>
     );
   }
 
@@ -258,14 +264,14 @@ export default function AppointmentsPage() {
     <div className="mx-auto max-w-6xl px-6 py-10">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Appointments</h1>
-          <p className="text-sm text-gray-500 mt-1">Weekly schedule across all doctors</p>
+          <h1 className="text-2xl font-semibold text-gray-800">{t('appointments.title')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('appointments.subtitle')}</p>
         </div>
         <Link
           to="/appointments/new"
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
         >
-          New Appointment
+          {t('appointments.newAppointment')}
         </Link>
       </div>
 
@@ -283,7 +289,7 @@ export default function AppointmentsPage() {
                 type="button"
                 onClick={() => setWeekStart((prev) => addDays(prev, -7))}
                 disabled={loading}
-                aria-label="Previous week"
+                aria-label={t('appointments.previousWeek')}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 ‹
@@ -295,7 +301,7 @@ export default function AppointmentsPage() {
                 type="button"
                 onClick={() => setWeekStart((prev) => addDays(prev, 7))}
                 disabled={loading}
-                aria-label="Next week"
+                aria-label={t('appointments.nextWeek')}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 ›
@@ -304,20 +310,20 @@ export default function AppointmentsPage() {
 
             <div className="flex items-center gap-2">
               <label htmlFor="doctorFilter" className="text-sm font-medium text-gray-600">
-                Doctor
+                {t('common.doctor')}
               </label>
               <MultiSelectDropdown
                 id="doctorFilter"
                 options={doctors.map((d) => ({ value: String(d.id), label: `${d.firstName} ${d.lastName}` }))}
                 selected={doctorFilterIds}
                 onChange={setDoctorFilterIds}
-                placeholder="All Doctors"
+                placeholder={t('appointments.allDoctors')}
               />
             </div>
 
             <div className="flex items-center gap-2">
               <label htmlFor="patientFilter" className="text-sm font-medium text-gray-600">
-                Patient
+                {t('common.patient')}
               </label>
               <div className="w-48">
                 <SearchableSelect
@@ -330,14 +336,14 @@ export default function AppointmentsPage() {
                   fetchPopularOptions={() =>
                     getPopularPatients(5, user!.token).then((patients) => patients.map(patientToOption))
                   }
-                  placeholder="All Patients"
+                  placeholder={t('appointments.allPatients')}
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <label htmlFor="procedureFilter" className="text-sm font-medium text-gray-600">
-                Procedure
+                {t('common.procedures')}
               </label>
               <select
                 id="procedureFilter"
@@ -345,7 +351,7 @@ export default function AppointmentsPage() {
                 onChange={(e) => setProcedureFilterId(e.target.value)}
                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Procedures</option>
+                <option value="">{t('appointments.allProcedures')}</option>
                 {procedures.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -356,14 +362,14 @@ export default function AppointmentsPage() {
 
             <div className="flex items-center gap-2">
               <label htmlFor="statusFilter" className="text-sm font-medium text-gray-600">
-                Status
+                {t('common.status')}
               </label>
               <MultiSelectDropdown
                 id="statusFilter"
-                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: s }))}
+                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: statusLabel(s) }))}
                 selected={statusFilter}
                 onChange={setStatusFilter}
-                placeholder="All Statuses"
+                placeholder={t('appointments.allStatuses')}
               />
             </div>
           </div>
@@ -372,14 +378,14 @@ export default function AppointmentsPage() {
             {APPOINTMENT_STATUSES.map((status) => (
               <div key={status} className="flex items-center gap-1.5">
                 <span className={`h-2.5 w-2.5 rounded-full ${STATUS_STYLES[status].dot}`} />
-                {status}
+                {statusLabel(status)}
               </div>
             ))}
           </div>
         </div>
 
         {loading ? (
-          <div className="px-6 py-24 text-center text-sm text-gray-500">Loading appointments…</div>
+          <div className="px-6 py-24 text-center text-sm text-gray-500">{t('appointments.loading')}</div>
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[760px]">
@@ -431,7 +437,7 @@ export default function AppointmentsPage() {
                             key={`group-${item.startMinutes}`}
                             role="button"
                             tabIndex={0}
-                            title={`${item.appts.length} appointments — click to view`}
+                            title={t('appointments.groupTooltip', { count: item.appts.length })}
                             onClick={() => setGroupModal({ dayLabel: day.dateLabel, appts: item.appts })}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
@@ -444,7 +450,7 @@ export default function AppointmentsPage() {
                           >
                             <Users className="h-4 w-4 text-gray-400" />
                             <p className="text-xs font-semibold text-gray-700">
-                              {item.appts.length} appointments
+                              {t('appointments.groupCount', { count: item.appts.length })}
                             </p>
                             <p className="text-[10px] text-gray-400">
                               {formatMinutesRange(item.startMinutes, item.endMinutes)}
@@ -462,7 +468,11 @@ export default function AppointmentsPage() {
                           key={appt.id}
                           role="button"
                           tabIndex={0}
-                          title={`${timeRangeLabel} · ${appt.doctorName ?? 'Unknown doctor'} · ${appt.patientName ?? 'Unknown patient'} — click to view`}
+                          title={t('appointments.apptTooltip', {
+                            time: timeRangeLabel,
+                            doctor: appt.doctorName ?? t('common.unknownDoctor'),
+                            patient: appt.patientName ?? t('common.unknownPatient'),
+                          })}
                           onClick={() => navigate(`/appointments/${appt.id}`)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
@@ -476,11 +486,11 @@ export default function AppointmentsPage() {
                           <p className="font-semibold truncate">{timeRangeLabel}</p>
                           <p className="flex items-center gap-1 truncate">
                             <Stethoscope className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{appt.doctorName ?? 'Unknown doctor'}</span>
+                            <span className="truncate">{appt.doctorName ?? t('common.unknownDoctor')}</span>
                           </p>
                           <p className="flex items-center gap-1 truncate">
                             <User className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{appt.patientName ?? 'Unknown patient'}</span>
+                            <span className="truncate">{appt.patientName ?? t('common.unknownPatient')}</span>
                           </p>
                           <div className="mt-1">{renderStatusControl(appt)}</div>
                         </div>
@@ -498,11 +508,13 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">{groupModal.dayLabel} appointments</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                {t('appointments.groupModalTitle', { day: groupModal.dayLabel })}
+              </h2>
               <button
                 type="button"
                 onClick={() => setGroupModal(null)}
-                aria-label="Close"
+                aria-label={t('common.close')}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 ✕
@@ -522,7 +534,10 @@ export default function AppointmentsPage() {
                       key={appt.id}
                       role="button"
                       tabIndex={0}
-                      title={`${appt.doctorName ?? 'Unknown doctor'} · ${appt.patientName ?? 'Unknown patient'} — click to view`}
+                      title={t('appointments.apptTooltipNoTime', {
+                        doctor: appt.doctorName ?? t('common.unknownDoctor'),
+                        patient: appt.patientName ?? t('common.unknownPatient'),
+                      })}
                       onClick={() => navigate(`/appointments/${appt.id}`)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -536,11 +551,11 @@ export default function AppointmentsPage() {
                         <p className="font-semibold">{timeRangeLabel}</p>
                         <p className="flex items-center gap-1.5 truncate">
                           <Stethoscope className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{appt.doctorName ?? 'Unknown doctor'}</span>
+                          <span className="truncate">{appt.doctorName ?? t('common.unknownDoctor')}</span>
                         </p>
                         <p className="flex items-center gap-1.5 truncate">
                           <User className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{appt.patientName ?? 'Unknown patient'}</span>
+                          <span className="truncate">{appt.patientName ?? t('common.unknownPatient')}</span>
                         </p>
                       </div>
                       <div className="shrink-0">{renderStatusControl(appt)}</div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { loginRequest } from '../api/auth';
 import { getErrorMessage } from '../api/apiErrors';
@@ -8,6 +9,7 @@ import { getErrorMessage } from '../api/apiErrors';
 export default function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
@@ -23,10 +25,10 @@ export default function LoginPage() {
 
     const errors: { username?: string; password?: string } = {};
     if (!username.trim()) {
-      errors.username = 'Username is required.';
+      errors.username = t('login.usernameRequired');
     }
     if (!password) {
-      errors.password = 'Password is required.';
+      errors.password = t('login.passwordRequired');
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -51,7 +53,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">Sign In</h1>
+        <h1 className="text-2xl font-semibold text-gray-800 mb-6">{t('login.signIn')}</h1>
 
         {serverError && (
           <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -62,7 +64,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="username">
-              Username
+              {t('login.username')}
             </label>
             <input
               id="username"
@@ -81,7 +83,7 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
-              Password
+              {t('login.password')}
             </label>
             <input
               id="password"
@@ -103,7 +105,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? t('login.signingIn') : t('login.signIn')}
           </button>
         </form>
       </div>

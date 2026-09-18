@@ -1,5 +1,7 @@
 // src/api/apiErrors.ts
 
+import i18n from '../i18n';
+
 export interface ApiErrorResponse {
     message: string;
     errorCode: string;
@@ -46,10 +48,10 @@ export function authHeaders(token: string): HeadersInit {
 /** Turns a caught error into a message safe to show a user, in place of raw browser/JS text. */
 export function getErrorMessage(err: unknown): string {
     if (err instanceof TypeError && err.message === 'Failed to fetch') {
-        return 'Unable to reach the server. Check your connection and try again.';
+        return i18n.t('common.unableToReachServer');
     }
     if (err instanceof Error) {
         return err.message;
     }
-    return 'An unexpected error occurred.';
+    return i18n.t('common.unexpectedError');
 }

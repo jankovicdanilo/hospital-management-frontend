@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { deletePatient, getPatients } from '../api/patient';
 import { getErrorMessage } from '../api/apiErrors';
@@ -21,6 +22,7 @@ function formatDate(dateOnly: string): string {
 
 export default function PatientsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [patients, setPatients] = useState<PatientListDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,14 +75,14 @@ export default function PatientsPage() {
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Patients</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage patient records</p>
+          <h1 className="text-2xl font-semibold text-gray-800">{t('patients.title')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('patients.subtitle')}</p>
         </div>
         <Link
           to="/patients/new"
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
         >
-          Add Patient
+          {t('patients.addPatient')}
         </Link>
       </div>
 
@@ -91,13 +93,17 @@ export default function PatientsPage() {
       )}
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <StatCard label="Total Patients" value={totalCount} />
+        <StatCard label={t('stats.totalPatients')} value={totalCount} />
         <StatCard
-          label="Showing"
+          label={t('stats.showing')}
           value={
             totalCount === 0
-              ? '0 of 0'
-              : `${(pageNumber - 1) * pageSize + 1}–${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount}`
+              ? t('stats.showingZero')
+              : t('stats.showingRange', {
+                  from: (pageNumber - 1) * pageSize + 1,
+                  to: Math.min(pageNumber * pageSize, totalCount),
+                  total: totalCount,
+                })
           }
         />
       </div>
@@ -108,7 +114,7 @@ export default function PatientsPage() {
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search by name or last name…"
+          placeholder={t('patients.searchPlaceholder')}
           className="w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -116,7 +122,7 @@ export default function PatientsPage() {
       <DataTable
           columns={[
             {
-              header: 'Patient',
+              header: t('patients.columnPatient'),
               render: (p) => (
                 <div className="flex items-center gap-3">
                   <Avatar name={`${p.name} ${p.lastName}`} />
@@ -126,24 +132,24 @@ export default function PatientsPage() {
                 </div>
               ),
             },
-            { header: 'Email', render: (p) => p.email },
-            { header: 'Phone', render: (p) => p.phone ?? '—' },
-            { header: 'Date of Birth', render: (p) => formatDate(p.dateOfBirth) },
+            { header: t('common.email'), render: (p) => p.email },
+            { header: t('common.phone'), render: (p) => p.phone ?? '—' },
+            { header: t('common.dateOfBirth'), render: (p) => formatDate(p.dateOfBirth) },
           ]}
           rows={patients}
           rowKey={(p) => p.id}
           loading={loading}
-          emptyMessage="No patients found."
+          emptyMessage={t('patients.noPatientsFound')}
           actions={(p) => (
               <>
                 <Link to={`/patients/${p.id}/history`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                  History
+                  {t('patients.history')}
                 </Link>
                 <Link to={`/patients/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                  Edit
+                  {t('common.edit')}
                 </Link>
                 <button type="button" onClick={() => setPendingDelete(p)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
-                  Delete
+                  {t('common.delete')}
                 </button>
               </>
           )}
@@ -158,13 +164,13 @@ export default function PatientsPage() {
       {pendingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-sm">
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">Delete patient?</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">{t('patients.deleteTitle')}</h2>
             <p className="text-sm text-gray-600 mb-6">
-              This will permanently remove{' '}
-              <span className="font-medium text-gray-800">
-                {pendingDelete.name} {pendingDelete.lastName}
-              </span>{' '}
-              from the patient records. This action cannot be undone.
+              <Trans
+                i18nKey="patients.deleteBody"
+                values={{ name: `${pendingDelete.name} ${pendingDelete.lastName}` }}
+                components={{ bold: <span className="font-medium text-gray-800" /> }}
+              />
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -173,7 +179,7 @@ export default function PatientsPage() {
                 disabled={deleting}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -181,7 +187,7 @@ export default function PatientsPage() {
                 disabled={deleting}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? t('common.deleting') : t('common.delete')}
               </button>
             </div>
           </div>

@@ -10,7 +10,8 @@ Before starting, read:
   status is Completed
 - A small format choice next to the action (PDF / DOCX), defaulting
   to PDF
-- Clicking triggers GET /api/billing/{appointmentId}?format={format},
+- Clicking triggers GET /api/billing/{appointmentId}?format={format}&language={language},
+  (language = the active i18n locale, "en" or "me"),
   reads the response as a blob (this endpoint returns a raw file, not
   the usual JSON envelope), and triggers a browser download using the
   same "{PatientName}_{InvoiceNumber}.{extension}" naming pattern the

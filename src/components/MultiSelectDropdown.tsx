@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface MultiSelectOption {
   value: string;
@@ -21,6 +22,7 @@ export default function MultiSelectDropdown({
   onChange,
   placeholder,
 }: MultiSelectDropdownProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,13 +93,13 @@ export default function MultiSelectDropdown({
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…"
+              placeholder={t('common.search')}
               className="w-full rounded-lg border border-gray-300 py-1.5 pl-8 pr-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filteredOptions.length === 0 ? (
-              <p className="px-2 py-1.5 text-sm text-gray-400">No options.</p>
+              <p className="px-2 py-1.5 text-sm text-gray-400">{t('common.noOptions')}</p>
             ) : (
               filteredOptions.map((option) => (
                 <label
@@ -121,7 +123,7 @@ export default function MultiSelectDropdown({
               onClick={() => onChange([])}
               className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-xs font-medium text-blue-600 hover:bg-blue-50"
             >
-              Clear selection
+              {t('common.clearSelection')}
             </button>
           )}
         </div>

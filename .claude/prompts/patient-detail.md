@@ -44,11 +44,12 @@ Before starting, read:
 - Once loaded, a new card appears between the profile header card and
   the Appointment History section, showing only the summary
   description text
-- Cache the summary client-side for the current page visit — once
-  loaded successfully for this patient, clicking the button again
-  does not re-fetch; it just re-shows the already-loaded summary. If
-  a request fails, do not cache the failure — clicking the button
-  again retries.
+- Cache the summary client-side for the current page visit, keyed by
+  patient and language — once loaded successfully, clicking the button
+  again does not re-fetch; it just re-shows the already-loaded summary.
+  Switching the app's language and clicking again fetches a new summary
+  for that language. If a request fails, do not cache the failure —
+  clicking the button again retries.
 - On failure, show an inline error in place of where the summary card
   would appear (e.g. "Failed to generate summary — try again"), not a
   page-wide banner. Both known failure codes (INVALID_PATIENT_ID,

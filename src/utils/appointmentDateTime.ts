@@ -51,17 +51,9 @@ export function parseDurationToMinutes(duration: string): number {
   return Number(h) * 60 + Number(m) + Number(s) / 60;
 }
 
-export function formatDurationLabel(duration: string): string {
+export function formatDurationParts(duration: string): { hours: number; minutes: number } {
   const totalMinutes = Math.round(parseDurationToMinutes(duration));
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) {
-    return `${m}m`;
-  }
-  if (m === 0) {
-    return `${h}h`;
-  }
-  return `${h}h ${m}m`;
+  return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
 }
 
 export function minutesToDurationString(totalMinutes: number): string {

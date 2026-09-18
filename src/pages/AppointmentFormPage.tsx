@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors, getPopularDoctors } from '../api/doctor';
 import { getPatients, getPopularPatients } from '../api/patient';
@@ -110,6 +111,7 @@ export default function AppointmentFormPage() {
   const isEdit = Boolean(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -376,7 +378,9 @@ export default function AppointmentFormPage() {
   }
 
   const workingDays = new Set(doctorSchedules.map((s) => s.dayOfWeek));
-  const workingDaysLabel = WEEK_ORDER.filter((d) => workingDays.has(d)).join(', ');
+  const workingDaysLabel = WEEK_ORDER.filter((d) => workingDays.has(d))
+    .map((d) => t(`days.${d.toLowerCase()}`))
+    .join(', ');
 
   function isNonWorkingDay(date: Date): boolean {
     return !workingDays.has(JS_DAY_TO_NAME[date.getDay()]);
@@ -398,28 +402,28 @@ export default function AppointmentFormPage() {
     const errors: FormErrors = {};
 
     if (!form.doctorId) {
-      errors.doctorId = 'Doctor is required.';
+      errors.doctorId = t('appointmentForm.doctorRequired');
     }
     if (!form.patientId) {
-      errors.patientId = 'Patient is required.';
+      errors.patientId = t('appointmentForm.patientRequired');
     }
     if (!form.date) {
-      errors.date = 'Date is required.';
+      errors.date = t('appointmentForm.dateRequired');
     }
 
     if (!selectedSlot) {
-      errors.slot = 'A time slot is required.';
+      errors.slot = t('appointmentForm.slotRequired');
     } else {
       const start = parseSlotTime(form.date, selectedSlot.start);
 
       if (start.getTime() <= Date.now()) {
-        errors.slot = 'The selected date and time must be in the future.';
+        errors.slot = t('appointmentForm.slotInFuture');
       }
 
       if (customDurationMinutes <= 0) {
-        errors.duration = 'Duration must be greater than 0.';
+        errors.duration = t('appointmentForm.durationPositive');
       } else if (customDurationMinutes > 480) {
-        errors.duration = 'Duration cannot exceed 8 hours.';
+        errors.duration = t('appointmentForm.durationMax');
       } else {
         const end = new Date(start.getTime() + customDurationMinutes * 60000);
         const daySchedule = doctorSchedules.find((s) => s.dayOfWeek === weekdayOfIsoDate(form.date));
@@ -428,7 +432,7 @@ export default function AppointmentFormPage() {
           const scheduleEnd = parseSlotTime(form.date, `${String(daySchedule.endHour).padStart(2, '0')}:00:00`);
 
           if (end.getTime() > scheduleEnd.getTime()) {
-            errors.duration = `This doctor is only scheduled until ${daySchedule.endHour}:00 that day — reduce the duration or pick an earlier slot.`;
+            errors.duration = t('appointmentForm.durationExceedsSchedule', { hour: daySchedule.endHour });
           }
         }
 
@@ -438,15 +442,14 @@ export default function AppointmentFormPage() {
             (iv) => iv.start.getTime() <= start.getTime() && end.getTime() <= iv.end.getTime(),
           );
           if (!fits) {
-            errors.duration =
-              'This duration overlaps another appointment for this doctor. Choose a shorter duration or a different slot.';
+            errors.duration = t('appointmentForm.durationOverlap');
           }
         }
       }
     }
 
     if (form.notes.length > 500) {
-      errors.notes = 'Notes cannot exceed 500 characters.';
+      errors.notes = t('appointmentForm.notesMaxLength');
     }
 
     return Object.keys(errors).length > 0 ? errors : null;
@@ -533,10 +536,10 @@ export default function AppointmentFormPage() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
-          {isEdit ? 'Edit Appointment' : 'New Appointment'}
+          {isEdit ? t('appointmentForm.editTitle') : t('appointmentForm.newTitle')}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {isEdit ? 'Update the appointment below.' : 'Schedule a new appointment.'}
+          {isEdit ? t('appointmentForm.editSubtitle') : t('appointmentForm.newSubtitle')}
         </p>
       </div>
 
@@ -548,14 +551,14 @@ export default function AppointmentFormPage() {
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-sm text-gray-500">Loading…</div>
+          <div className="py-12 text-center text-sm text-gray-500">{t('common.loading')}</div>
         ) : notEditable ? (
           <div className="py-8 text-center">
             <p className="text-sm text-gray-600 mb-4">
-              Only pending appointments can be edited. This appointment can no longer be changed.
+              {t('appointmentForm.notEditable')}
             </p>
             <Link to="/appointments" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-              ← Back to Appointments
+              ← {t('appointments.backToAppointments')}
             </Link>
           </div>
         ) : (
@@ -563,7 +566,7 @@ export default function AppointmentFormPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="doctorId">
-                  Doctor
+                  {t('common.doctor')}
                 </label>
                 <SearchableSelect
                   id="doctorId"
@@ -575,7 +578,7 @@ export default function AppointmentFormPage() {
                   fetchPopularOptions={() =>
                     getPopularDoctors(5, user!.token).then((doctors) => doctors.map(doctorToOption))
                   }
-                  placeholder="Search for a doctor…"
+                  placeholder={t('appointmentForm.searchDoctor')}
                   initialLabel={initialDoctorLabel}
                   hasError={Boolean(fieldErrors.doctorId)}
                 />
@@ -586,7 +589,7 @@ export default function AppointmentFormPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="date">
-                  Date
+                  {t('common.date')}
                 </label>
                 <DatePicker
                   id="date"
@@ -598,10 +601,10 @@ export default function AppointmentFormPage() {
                   hasError={Boolean(fieldErrors.date)}
                   placeholder={
                     !form.doctorId
-                      ? 'Select a doctor first…'
+                      ? t('appointmentForm.selectDoctorFirst')
                       : loadingSchedule
-                        ? 'Loading schedule…'
-                        : 'Select a date…'
+                        ? t('appointmentForm.loadingSchedule')
+                        : t('common.selectDate')
                   }
                 />
                 {fieldErrors.date ? (
@@ -611,8 +614,8 @@ export default function AppointmentFormPage() {
                   !loadingSchedule && (
                     <p className="mt-1 text-xs text-gray-500">
                       {workingDays.size > 0
-                        ? `Works: ${workingDaysLabel}`
-                        : 'No weekly schedule on file for this doctor.'}
+                        ? t('appointmentForm.worksLabel', { days: workingDaysLabel })
+                        : t('appointmentForm.noWeeklySchedule')}
                     </p>
                   )
                 )}
@@ -621,7 +624,7 @@ export default function AppointmentFormPage() {
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="patientId">
-                Patient
+                {t('common.patient')}
               </label>
               <SearchableSelect
                 id="patientId"
@@ -635,7 +638,7 @@ export default function AppointmentFormPage() {
                 fetchPopularOptions={() =>
                   getPopularPatients(5, user!.token).then((patients) => patients.map(patientToOption))
                 }
-                placeholder="Search for a patient…"
+                placeholder={t('appointmentForm.searchPatient')}
                 initialLabel={initialPatientLabel}
                 hasError={Boolean(fieldErrors.patientId)}
               />
@@ -645,18 +648,17 @@ export default function AppointmentFormPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('appointmentForm.startTime')}</label>
 
               {!form.doctorId || !form.date ? (
-                <p className="text-sm text-gray-400">Select a doctor and date to see available slots.</p>
+                <p className="text-sm text-gray-400">{t('appointmentForm.selectDoctorAndDate')}</p>
               ) : loadingSlots ? (
-                <p className="text-sm text-gray-500">Loading available slots…</p>
+                <p className="text-sm text-gray-500">{t('appointmentForm.loadingSlots')}</p>
               ) : slotsError ? (
                 <p className="text-sm text-red-600">{slotsError}</p>
               ) : freeSlots.length === 0 ? (
                 <p className="text-sm text-gray-400">
-                  No free slots for this doctor on this date. The doctor may not have a schedule for that
-                  day.
+                  {t('appointmentForm.noFreeSlots')}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -689,7 +691,7 @@ export default function AppointmentFormPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('appointmentForm.duration')}</label>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-1.5">
                   <input
@@ -706,7 +708,7 @@ export default function AppointmentFormPage() {
                     }`}
                   />
                   <label htmlFor="durationHours" className="text-sm text-gray-500">
-                    hr
+                    {t('appointmentForm.hoursAbbrev')}
                   </label>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -724,11 +726,11 @@ export default function AppointmentFormPage() {
                     }`}
                   />
                   <label htmlFor="durationMinutes" className="text-sm text-gray-500">
-                    min
+                    {t('appointmentForm.minutesAbbrev')}
                   </label>
                 </div>
                 {durationEndLabel && (
-                  <span className="text-sm text-gray-500">Ends at {durationEndLabel}</span>
+                  <span className="text-sm text-gray-500">{t('appointmentForm.endsAt', { time: durationEndLabel })}</span>
                 )}
               </div>
               {fieldErrors.duration ? (
@@ -736,7 +738,7 @@ export default function AppointmentFormPage() {
               ) : (
                 selectedDaySchedule && (
                   <p className="mt-1 text-xs text-gray-500">
-                    Doctor is scheduled until {selectedDaySchedule.endHour}:00 that day.
+                    {t('appointmentForm.scheduledUntil', { hour: selectedDaySchedule.endHour })}
                   </p>
                 )
               )}
@@ -745,7 +747,7 @@ export default function AppointmentFormPage() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-sm font-medium text-gray-700" htmlFor="notes">
-                  Notes <span className="text-gray-400 font-normal">(optional)</span>
+                  {t('common.notes')} <span className="text-gray-400 font-normal">{t('common.optional')}</span>
                 </label>
                 <span className="text-xs text-gray-400">{form.notes.length}/500</span>
               </div>
@@ -765,7 +767,7 @@ export default function AppointmentFormPage() {
             {!isEdit && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="procedures">
-                  Procedures <span className="text-gray-400 font-normal">(optional)</span>
+                  {t('common.procedures')} <span className="text-gray-400 font-normal">{t('common.optional')}</span>
                 </label>
                 <MultiSelectDropdown
                   id="procedures"
@@ -775,10 +777,10 @@ export default function AppointmentFormPage() {
                   }))}
                   selected={selectedProcedureIds}
                   onChange={setSelectedProcedureIds}
-                  placeholder="No procedures selected"
+                  placeholder={t('appointmentForm.noProceduresSelected')}
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Selected procedures are attached once the appointment is created.
+                  {t('appointmentForm.proceduresHint')}
                 </p>
               </div>
             )}
@@ -788,14 +790,14 @@ export default function AppointmentFormPage() {
                 to="/appointments"
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </Link>
               <button
                 type="submit"
                 disabled={saving}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Appointment'}
+                {saving ? t('common.saving') : isEdit ? t('common.saveChanges') : t('appointmentForm.createAppointment')}
               </button>
             </div>
           </form>

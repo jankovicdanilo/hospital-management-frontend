@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getPatientById } from '../api/patient';
 import { getAppointmentsByPatient, getPatientSummary } from '../api/appointment';
@@ -40,6 +41,7 @@ export default function PatientDetailPage() {
   const patientId = Number(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const [patient, setPatient] = useState<PatientGetByIdDto | null>(null);
   const [patientLoading, setPatientLoading] = useState(true);
@@ -51,9 +53,12 @@ export default function PatientDetailPage() {
   const [pageNumber, setPageNumber] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
-  const [summary, setSummary] = useState<PatientSummaryResponseDto | null>(null);
+  // Keyed by language so switching the app's language and re-clicking Summary
+  // fetches a fresh translation instead of re-showing the stale cached one.
+  const [summaryByLanguage, setSummaryByLanguage] = useState<Record<string, PatientSummaryResponseDto>>({});
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState('');
+  const summary = summaryByLanguage[i18n.language];
 
   const loadPatient = useCallback(async () => {
     setPatientLoading(true);
@@ -93,13 +98,14 @@ export default function PatientDetailPage() {
       return;
     }
 
+    const language = i18n.language;
     setSummaryLoading(true);
     setSummaryError('');
     try {
-      const data = await getPatientSummary(patientId, user!.token);
-      setSummary(data);
+      const data = await getPatientSummary(patientId, language, user!.token);
+      setSummaryByLanguage((prev) => ({ ...prev, [language]: data }));
     } catch {
-      setSummaryError('Failed to generate summary — try again');
+      setSummaryError(t('patientDetail.summaryError'));
     } finally {
       setSummaryLoading(false);
     }
@@ -125,7 +131,7 @@ export default function PatientDetailPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6">
         <Link to="/patients" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-          ← Back to Patients
+          ← {t('patientDetail.backToPatients')}
         </Link>
       </div>
 
@@ -137,7 +143,7 @@ export default function PatientDetailPage() {
 
       {patientLoading ? (
         <div className="rounded-2xl bg-white shadow-md p-12 text-center text-sm text-gray-500">
-          Loading patient…
+          {t('patientDetail.loading')}
         </div>
       ) : !patient ? null : (
         <>
@@ -155,22 +161,22 @@ export default function PatientDetailPage() {
                   disabled={summaryLoading}
                   className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
-                  {summaryLoading ? 'Generating…' : 'Summary'}
+                  {summaryLoading ? t('patientDetail.generating') : t('patientDetail.summary')}
                 </button>
               </div>
             </div>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-100 pt-6">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Email</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('common.email')}</p>
                 <p className="mt-1 text-sm font-medium text-gray-800">{patient.email}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Phone</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('common.phone')}</p>
                 <p className="mt-1 text-sm font-medium text-gray-800">{patient.phone ?? '—'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Date of Birth</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('common.dateOfBirth')}</p>
                 <p className="mt-1 text-sm font-medium text-gray-800">{formatDateOnly(patient.dateOfBirth)}</p>
               </div>
             </div>
@@ -178,7 +184,7 @@ export default function PatientDetailPage() {
 
           {summary && (
             <div className="rounded-2xl bg-white shadow-md p-8 mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">Summary</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">{t('patientDetail.summary')}</h2>
               <p className="text-sm text-gray-700 whitespace-pre-line">{summary.summary}</p>
             </div>
           )}
@@ -191,37 +197,37 @@ export default function PatientDetailPage() {
 
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Appointment History</h2>
-              <p className="text-sm text-gray-500 mt-1">All appointments booked for this patient.</p>
+              <h2 className="text-lg font-semibold text-gray-800">{t('patientDetail.appointmentHistory')}</h2>
+              <p className="text-sm text-gray-500 mt-1">{t('patientDetail.appointmentHistorySubtitle')}</p>
             </div>
             <div className="flex items-center gap-2">
               <label htmlFor="historyStatusFilter" className="text-sm font-medium text-gray-600">
-                Status
+                {t('common.status')}
               </label>
               <MultiSelectDropdown
                 id="historyStatusFilter"
-                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: s }))}
+                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: t(`status.${s.toLowerCase()}`) }))}
                 selected={statusFilter}
                 onChange={setStatusFilter}
-                placeholder="All Statuses"
+                placeholder={t('appointments.allStatuses')}
               />
             </div>
           </div>
 
           <DataTable
             columns={[
-              { header: 'Date & Time', render: (a) => formatDateTime(a.dateTime) },
-              { header: 'Doctor', render: (a) => a.doctorName ?? 'Unknown doctor' },
+              { header: t('patientDetail.columnDateTime'), render: (a) => formatDateTime(a.dateTime) },
+              { header: t('common.doctor'), render: (a) => a.doctorName ?? t('common.unknownDoctor') },
               {
-                header: 'Status',
-                render: (a) => <Badge color={STATUS_STYLES[a.status].badge}>{a.status}</Badge>,
+                header: t('common.status'),
+                render: (a) => <Badge color={STATUS_STYLES[a.status].badge}>{t(`status.${a.status.toLowerCase()}`)}</Badge>,
               },
-              { header: 'Total Cost', render: (a) => formatCurrency(a.totalCost) },
+              { header: t('patientDetail.columnTotalCost'), render: (a) => formatCurrency(a.totalCost) },
             ]}
             rows={displayedAppointments}
             rowKey={(a) => a.id}
             loading={appointmentsLoading}
-            emptyMessage="No appointments found."
+            emptyMessage={t('patientDetail.noAppointmentsFound')}
             onRowClick={(a) => navigate(`/appointments/${a.id}`)}
             pagination={{
               pageNumber,

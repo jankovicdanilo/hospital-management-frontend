@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getDoctorById } from '../api/doctor';
 import {
@@ -34,6 +35,7 @@ export default function DoctorDetailPage() {
   const { id } = useParams();
   const doctorId = Number(id);
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [doctor, setDoctor] = useState<DoctorResponseDto | null>(null);
   const [schedules, setSchedules] = useState<DoctorScheduleResponseDto[]>([]);
@@ -97,19 +99,19 @@ export default function DoctorDetailPage() {
     const end = Number(form.endHour);
 
     if (!form.startHour.trim() || Number.isNaN(start)) {
-      errors.startHour = 'Start hour is required.';
+      errors.startHour = t('doctorDetail.startHourRequired');
     } else if (start < 8 || start > 19) {
-      errors.startHour = 'Start hour must be between 8 and 19.';
+      errors.startHour = t('doctorDetail.startHourRange');
     }
 
     if (!form.endHour.trim() || Number.isNaN(end)) {
-      errors.endHour = 'End hour is required.';
+      errors.endHour = t('doctorDetail.endHourRequired');
     } else if (end < 9 || end > 20) {
-      errors.endHour = 'End hour must be between 9 and 20.';
+      errors.endHour = t('doctorDetail.endHourRange');
     }
 
     if (!errors.startHour && !errors.endHour && end <= start) {
-      errors.endHour = 'End hour must be after start hour.';
+      errors.endHour = t('doctorDetail.endAfterStart');
     }
 
     return Object.keys(errors).length > 0 ? errors : null;
@@ -196,7 +198,7 @@ export default function DoctorDetailPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6">
         <Link to="/doctors" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-          ← Back to Doctors
+          ← {t('doctorDetail.backToDoctors')}
         </Link>
       </div>
 
@@ -208,7 +210,7 @@ export default function DoctorDetailPage() {
 
       {loading ? (
         <div className="rounded-2xl bg-white shadow-md p-12 text-center text-sm text-gray-500">
-          Loading doctor…
+          {t('doctorDetail.loading')}
         </div>
       ) : !doctor ? null : (
         <>
@@ -229,19 +231,19 @@ export default function DoctorDetailPage() {
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-6">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Email</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('common.email')}</p>
                 <p className="mt-1 text-sm font-medium text-gray-800">{doctor.email ?? '—'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Phone</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{t('common.phone')}</p>
                 <p className="mt-1 text-sm font-medium text-gray-800">{doctor.phone ?? '—'}</p>
               </div>
             </div>
           </div>
 
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Weekly Schedule</h2>
-            <p className="text-sm text-gray-500 mt-1">Working hours by day of the week.</p>
+            <h2 className="text-lg font-semibold text-gray-800">{t('doctorDetail.weeklySchedule')}</h2>
+            <p className="text-sm text-gray-500 mt-1">{t('doctorDetail.weeklyScheduleSubtitle')}</p>
           </div>
 
           <div className="rounded-2xl bg-white shadow-md overflow-hidden">
@@ -254,14 +256,14 @@ export default function DoctorDetailPage() {
                   <div key={day} className="px-6 py-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium text-gray-800">{day}</p>
+                        <p className="font-medium text-gray-800">{t(`days.${day.toLowerCase()}`)}</p>
                         {!isEditing &&
                           (schedule ? (
                             <p className="text-sm text-gray-600 mt-0.5">
                               {formatHour(schedule.startHour)}–{formatHour(schedule.endHour)}
                             </p>
                           ) : (
-                            <p className="text-sm text-gray-400 mt-0.5">Not scheduled</p>
+                            <p className="text-sm text-gray-400 mt-0.5">{t('doctorDetail.notScheduled')}</p>
                           ))}
                       </div>
 
@@ -274,14 +276,14 @@ export default function DoctorDetailPage() {
                                 onClick={() => startEdit(schedule)}
                                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                Edit
+                                {t('common.edit')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setPendingDelete(schedule)}
                                 className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                               >
-                                Remove
+                                {t('common.remove')}
                               </button>
                             </>
                           ) : (
@@ -290,7 +292,7 @@ export default function DoctorDetailPage() {
                               onClick={() => startAdd(day)}
                               className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                             >
-                              Add Schedule
+                              {t('doctorDetail.addSchedule')}
                             </button>
                           )}
                         </div>
@@ -314,7 +316,7 @@ export default function DoctorDetailPage() {
                               className="block text-xs font-medium text-gray-700 mb-1"
                               htmlFor={`start-${day}`}
                             >
-                              Start Hour
+                              {t('doctorDetail.startHour')}
                             </label>
                             <input
                               id={`start-${day}`}
@@ -341,7 +343,7 @@ export default function DoctorDetailPage() {
                               className="block text-xs font-medium text-gray-700 mb-1"
                               htmlFor={`end-${day}`}
                             >
-                              End Hour
+                              {t('doctorDetail.endHour')}
                             </label>
                             <input
                               id={`end-${day}`}
@@ -371,14 +373,14 @@ export default function DoctorDetailPage() {
                             disabled={saving}
                             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
                           <button
                             type="submit"
                             disabled={saving}
                             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                           >
-                            {saving ? 'Saving…' : 'Save'}
+                            {saving ? t('common.saving') : t('common.save')}
                           </button>
                         </div>
                       </form>
@@ -394,11 +396,13 @@ export default function DoctorDetailPage() {
       {pendingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-md p-6 w-full max-w-sm">
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">Remove schedule?</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">{t('doctorDetail.removeScheduleTitle')}</h2>
             <p className="text-sm text-gray-600 mb-6">
-              This will remove the{' '}
-              <span className="font-medium text-gray-800">{pendingDelete.dayOfWeek}</span>{' '}
-              schedule for this doctor. This action cannot be undone.
+              <Trans
+                i18nKey="doctorDetail.removeScheduleBody"
+                values={{ day: t(`days.${pendingDelete.dayOfWeek.toLowerCase()}`) }}
+                components={{ bold: <span className="font-medium text-gray-800" /> }}
+              />
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -407,7 +411,7 @@ export default function DoctorDetailPage() {
                 disabled={deleting}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -415,7 +419,7 @@ export default function DoctorDetailPage() {
                 disabled={deleting}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                {deleting ? 'Removing…' : 'Remove'}
+                {deleting ? t('doctorDetail.removing') : t('common.remove')}
               </button>
             </div>
           </div>
