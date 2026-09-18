@@ -8,7 +8,7 @@ import { getPatients, getPopularPatients } from '../api/patient';
 import { getProcedures } from '../api/procedure';
 import { getAppointmentsByWeek, updateAppointmentStatus } from '../api/appointment';
 import { getErrorMessage } from '../api/apiErrors';
-import type { AppointmentListResponseDto } from '../types/appointment';
+import type { AppointmentListResponseDto, AppointmentStatus } from '../types/appointment';
 import type { DoctorResponseDto } from '../types/doctor';
 import type { ProcedureListDto } from '../types/procedure';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
@@ -16,6 +16,7 @@ import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../ut
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
 import { patientToOption } from '../utils/searchableSelectOptions';
+import { translateStatus } from '../utils/i18nLabels';
 
 const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 20;
@@ -136,8 +137,8 @@ export default function AppointmentsPage() {
     appts: AppointmentListResponseDto[];
   } | null>(null);
 
-  function statusLabel(status: string): string {
-    return t(`status.${status.toLowerCase()}`);
+  function statusLabel(status: AppointmentStatus): string {
+    return translateStatus(t, status);
   }
 
   useEffect(() => {

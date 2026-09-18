@@ -12,6 +12,7 @@ import Badge from '../components/Badge';
 import { STATUS_STYLES } from '../utils/appointmentStatus';
 import { formatDurationParts } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
+import { translateStatus } from '../utils/i18nLabels';
 
 function buildInvoiceFilename(patientName: string, format: InvoiceFormat): string {
   const sanitized = patientName.trim().replace(/\s+/g, '_');
@@ -171,7 +172,7 @@ export default function AppointmentDetailPage() {
                     })}
                   </h1>
                   <Badge color={STATUS_STYLES[appointment.status].badge}>
-                    {t(`status.${appointment.status.toLowerCase()}`)}
+                    {translateStatus(t, appointment.status)}
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">

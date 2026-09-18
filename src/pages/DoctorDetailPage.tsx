@@ -15,6 +15,7 @@ import type { DoctorResponseDto } from '../types/doctor';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
+import { translateDayOfWeek } from '../utils/i18nLabels';
 
 const WEEKDAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -256,7 +257,7 @@ export default function DoctorDetailPage() {
                   <div key={day} className="px-6 py-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="font-medium text-gray-800">{t(`days.${day.toLowerCase()}`)}</p>
+                        <p className="font-medium text-gray-800">{translateDayOfWeek(t, day)}</p>
                         {!isEditing &&
                           (schedule ? (
                             <p className="text-sm text-gray-600 mt-0.5">
@@ -400,7 +401,7 @@ export default function DoctorDetailPage() {
             <p className="text-sm text-gray-600 mb-6">
               <Trans
                 i18nKey="doctorDetail.removeScheduleBody"
-                values={{ day: t(`days.${pendingDelete.dayOfWeek.toLowerCase()}`) }}
+                values={{ day: translateDayOfWeek(t, pendingDelete.dayOfWeek) }}
                 components={{ bold: <span className="font-medium text-gray-800" /> }}
               />
             </p>

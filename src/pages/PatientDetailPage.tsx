@@ -13,6 +13,7 @@ import Badge from '../components/Badge';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
 import { formatCurrency } from '../utils/currency';
+import { translateStatus } from '../utils/i18nLabels';
 
 function formatDateOnly(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
@@ -206,7 +207,7 @@ export default function PatientDetailPage() {
               </label>
               <MultiSelectDropdown
                 id="historyStatusFilter"
-                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: t(`status.${s.toLowerCase()}`) }))}
+                options={APPOINTMENT_STATUSES.map((s) => ({ value: s, label: translateStatus(t, s) }))}
                 selected={statusFilter}
                 onChange={setStatusFilter}
                 placeholder={t('appointments.allStatuses')}
@@ -220,7 +221,7 @@ export default function PatientDetailPage() {
               { header: t('common.doctor'), render: (a) => a.doctorName ?? t('common.unknownDoctor') },
               {
                 header: t('common.status'),
-                render: (a) => <Badge color={STATUS_STYLES[a.status].badge}>{t(`status.${a.status.toLowerCase()}`)}</Badge>,
+                render: (a) => <Badge color={STATUS_STYLES[a.status].badge}>{translateStatus(t, a.status)}</Badge>,
               },
               { header: t('patientDetail.columnTotalCost'), render: (a) => formatCurrency(a.totalCost) },
             ]}

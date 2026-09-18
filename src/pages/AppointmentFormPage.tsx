@@ -33,6 +33,7 @@ import {
 } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
 import { doctorToOption, patientToOption } from '../utils/searchableSelectOptions';
+import { translateDayOfWeek } from '../utils/i18nLabels';
 
 const JS_DAY_TO_NAME: DayOfWeek[] = [
   'Sunday',
@@ -379,7 +380,7 @@ export default function AppointmentFormPage() {
 
   const workingDays = new Set(doctorSchedules.map((s) => s.dayOfWeek));
   const workingDaysLabel = WEEK_ORDER.filter((d) => workingDays.has(d))
-    .map((d) => t(`days.${d.toLowerCase()}`))
+    .map((d) => translateDayOfWeek(t, d))
     .join(', ');
 
   function isNonWorkingDay(date: Date): boolean {
