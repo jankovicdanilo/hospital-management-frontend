@@ -46,6 +46,10 @@ Claude Code should follow these conventions automatically when writing or editin
   git commit, git push, branch creation, merge, reset, or similar.
   Leave the working tree as modified/untracked files; the developer
   reviews and commits manually.
+- Exception: when following prompts/pr-workflow.md, GitHub MCP tools
+  may create a branch, commit, push, and open a PR — this is the one
+  sanctioned path for repo-state changes, and only via MCP, never by
+  falling back to git CLI or gh CLI.
 - Read-only git commands (git diff, git log, git status) are fine —
   needed for reviewing changes before a PR.
 - If .gitignore doesn't exist or looks incomplete, flag it to the
