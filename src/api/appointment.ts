@@ -56,10 +56,11 @@ export async function getAppointmentsByPatient(
 
 export async function getPatientSummary(
   patientId: number,
+  language: string,
   token: string,
 ): Promise<PatientSummaryResponseDto> {
   const response = await fetch(
-    `${APPOINTMENT_BASE_URL}/api/appointment/patient/${patientId}/summary`,
+    `${APPOINTMENT_BASE_URL}/api/appointment/patient/${patientId}/summary?language=${language}`,
     { headers: authHeaders(token) },
   );
 

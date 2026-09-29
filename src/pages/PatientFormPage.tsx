@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { createPatient, getPatientById, updatePatient } from '../api/patient';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
@@ -22,6 +23,7 @@ export default function PatientFormPage() {
   const isEdit = Boolean(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -74,18 +76,18 @@ export default function PatientFormPage() {
   function validate(): boolean {
     const errors: FormErrors = {};
     if (!form.name.trim()) {
-      errors.name = 'First name is required.';
+      errors.name = t('common.firstNameRequired');
     }
     if (!form.lastName.trim()) {
-      errors.lastName = 'Last name is required.';
+      errors.lastName = t('common.lastNameRequired');
     }
     if (!form.email.trim()) {
-      errors.email = 'Email is required.';
+      errors.email = t('common.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      errors.email = 'Enter a valid email address.';
+      errors.email = t('common.emailInvalid');
     }
     if (!form.dateOfBirth) {
-      errors.dateOfBirth = 'Date of birth is required.';
+      errors.dateOfBirth = t('patientForm.dobRequired');
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -139,10 +141,10 @@ export default function PatientFormPage() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
-          {isEdit ? 'Edit Patient' : 'Add Patient'}
+          {isEdit ? t('patientForm.editTitle') : t('patientForm.addTitle')}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {isEdit ? 'Update the patient record below.' : 'Enter the new patient’s details.'}
+          {isEdit ? t('patientForm.editSubtitle') : t('patientForm.addSubtitle')}
         </p>
       </div>
 
@@ -154,13 +156,13 @@ export default function PatientFormPage() {
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-sm text-gray-500">Loading patient…</div>
+          <div className="py-12 text-center text-sm text-gray-500">{t('patientForm.loading')}</div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
-                  First Name
+                  {t('common.firstName')}
                 </label>
                 <input
                   id="name"
@@ -176,7 +178,7 @@ export default function PatientFormPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="lastName">
-                  Last Name
+                  {t('common.lastName')}
                 </label>
                 <input
                   id="lastName"
@@ -195,7 +197,7 @@ export default function PatientFormPage() {
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
-                Email
+                {t('common.email')}
               </label>
               <input
                 id="email"
@@ -212,7 +214,7 @@ export default function PatientFormPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="phone">
-                  Phone <span className="text-gray-400 font-normal">(optional)</span>
+                  {t('common.phone')} <span className="text-gray-400 font-normal">{t('common.optional')}</span>
                 </label>
                 <input
                   id="phone"
@@ -230,7 +232,7 @@ export default function PatientFormPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="dateOfBirth">
-                  Date of Birth
+                  {t('common.dateOfBirth')}
                 </label>
                 <input
                   id="dateOfBirth"
@@ -252,14 +254,14 @@ export default function PatientFormPage() {
                 to="/patients"
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </Link>
               <button
                 type="submit"
                 disabled={saving}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
-                {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Patient'}
+                {saving ? t('common.saving') : isEdit ? t('common.saveChanges') : t('patientForm.addTitle')}
               </button>
             </div>
           </form>

@@ -7,11 +7,13 @@ export type InvoiceFormat = 'pdf' | 'docx';
 export async function downloadInvoice(
   appointmentId: number,
   format: InvoiceFormat,
+  language: string,
   token: string,
 ): Promise<Blob> {
-  const response = await fetch(`${INVOICE_BASE_URL}/api/billing/${appointmentId}?format=${format}`, {
-    headers: authHeaders(token),
-  });
+  const response = await fetch(
+    `${INVOICE_BASE_URL}/api/billing/${appointmentId}?format=${format}&language=${language}`,
+    { headers: authHeaders(token) },
+  );
 
   if (!response.ok) {
     return throwApiError(response);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -37,7 +38,7 @@ function getMonthGrid(viewMonth: Date): Date[] {
   return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
 
-const WEEKDAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const WEEKDAY_LABEL_KEYS = ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'] as const;
 
 interface DatePickerProps {
   id?: string;
@@ -57,9 +58,11 @@ export default function DatePicker({
   min,
   isDayDisabled,
   disabled = false,
-  placeholder = 'Select a date…',
+  placeholder,
   hasError = false,
 }: DatePickerProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t('common.selectDate');
   const [open, setOpen] = useState(false);
   const [viewMonth, setViewMonth] = useState(() => (value ? parseIso(value) : startOfDay(new Date())));
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,7 +126,7 @@ export default function DatePicker({
                 day: 'numeric',
                 year: 'numeric',
               })
-            : placeholder}
+            : resolvedPlaceholder}
         </span>
         <Calendar className="h-4 w-4 text-gray-400" />
       </button>
@@ -135,7 +138,7 @@ export default function DatePicker({
               type="button"
               onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
-              aria-label="Previous month"
+              aria-label={t('datePicker.previousMonth')}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -146,16 +149,16 @@ export default function DatePicker({
               type="button"
               onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
               className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
-              aria-label="Next month"
+              aria-label={t('datePicker.nextMonth')}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {WEEKDAY_LABELS.map((label) => (
-              <div key={label} className="text-center text-[11px] font-medium uppercase text-gray-400">
-                {label}
+            {WEEKDAY_LABEL_KEYS.map((key) => (
+              <div key={key} className="text-center text-[11px] font-medium uppercase text-gray-400">
+                {t(`daysShort.${key}`)}
               </div>
             ))}
           </div>

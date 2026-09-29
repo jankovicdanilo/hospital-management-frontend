@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { ChevronDown, Loader2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface SearchableSelectOption {
   id: string | number;
@@ -30,11 +31,13 @@ export default function SearchableSelect({
   onChange,
   fetchOptions,
   fetchPopularOptions,
-  placeholder = 'Search…',
+  placeholder,
   disabled = false,
   initialLabel,
   hasError = false,
 }: SearchableSelectProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t('common.search');
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<SearchableSelectOption[]>([]);
@@ -115,7 +118,7 @@ export default function SearchableSelect({
         .catch(() => {
           if (!cancelled) {
             setOptions([]);
-            setError('Failed to load results.');
+            setError(t('searchableSelect.failedToLoad'));
           }
         })
         .finally(() => {
@@ -153,7 +156,7 @@ export default function SearchableSelect({
       })
       .catch(() => {
         if (mountedRef.current) {
-          setPopularError('Failed to load results.');
+          setPopularError(t('searchableSelect.failedToLoad'));
         }
       })
       .finally(() => {
@@ -209,7 +212,7 @@ export default function SearchableSelect({
           className="flex-1 truncate text-left outline-none disabled:cursor-not-allowed"
         >
           <span className={displayLabel ? 'text-gray-800' : 'text-gray-400'}>
-            {displayLabel ?? placeholder}
+            {displayLabel ?? resolvedPlaceholder}
           </span>
         </button>
         <span className="flex shrink-0 items-center gap-1.5">
@@ -217,7 +220,7 @@ export default function SearchableSelect({
             <button
               type="button"
               onClick={handleClear}
-              aria-label="Clear selection"
+              aria-label={t('common.clearSelection')}
               className="rounded p-0.5 text-gray-400 outline-none hover:text-gray-600 focus:ring-1 focus:ring-blue-500"
             >
               <X className="h-3.5 w-3.5" />
@@ -234,7 +237,7 @@ export default function SearchableSelect({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             className="mb-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -242,16 +245,16 @@ export default function SearchableSelect({
             {query.trim().length === 0 && fetchPopularOptions ? (
               loadingPopular ? (
                 <p className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('common.loading')}
                 </p>
               ) : popularError ? (
                 <p className="px-2 py-1.5 text-sm text-red-600">{popularError}</p>
               ) : popularOptions.length === 0 ? (
-                <p className="px-2 py-1.5 text-sm text-gray-400">No results found.</p>
+                <p className="px-2 py-1.5 text-sm text-gray-400">{t('common.noResultsFound')}</p>
               ) : (
                 <>
                   <p className="px-2 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
-                    Most booked
+                    {t('searchableSelect.mostBooked')}
                   </p>
                   {popularOptions.map((option) => (
                     <button
@@ -267,16 +270,16 @@ export default function SearchableSelect({
               )
             ) : query.trim().length < MIN_SEARCH_LENGTH ? (
               <p className="px-2 py-1.5 text-sm text-gray-400">
-                Type at least {MIN_SEARCH_LENGTH} characters to search.
+                {t('searchableSelect.minChars', { count: MIN_SEARCH_LENGTH })}
               </p>
             ) : loading ? (
               <p className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching…
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('searchableSelect.searching')}
               </p>
             ) : error ? (
               <p className="px-2 py-1.5 text-sm text-red-600">{error}</p>
             ) : options.length === 0 ? (
-              <p className="px-2 py-1.5 text-sm text-gray-400">No results found.</p>
+              <p className="px-2 py-1.5 text-sm text-gray-400">{t('common.noResultsFound')}</p>
             ) : (
               options.map((option) => (
                 <button
