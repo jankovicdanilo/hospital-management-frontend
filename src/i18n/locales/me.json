@@ -97,6 +97,20 @@
     "sa": "Su",
     "su": "Ne"
   },
+  "monthsShort": {
+    "jan": "jan",
+    "feb": "feb",
+    "mar": "mar",
+    "apr": "apr",
+    "may": "maj",
+    "jun": "jun",
+    "jul": "jul",
+    "aug": "avg",
+    "sep": "sep",
+    "oct": "okt",
+    "nov": "nov",
+    "dec": "dec"
+  },
   "status": {
     "pending": "Na čekanju",
     "completed": "Završeno",
@@ -209,7 +223,9 @@
     "groupCount": "{{count}} termina",
     "apptTooltip": "{{time}} · {{doctor}} · {{patient}} — kliknite za pregled",
     "apptTooltipNoTime": "{{doctor}} · {{patient}} — kliknite za pregled",
-    "groupModalTitle": "Termini za {{day}}"
+    "groupModalTitle": "Termini za {{day}}",
+    "monthDay": "{{day}}. {{month}}",
+    "weekRange": "{{start}} – {{end}}, {{year}}"
   },
   "appointmentForm": {
     "editTitle": "Izmijeni termin",

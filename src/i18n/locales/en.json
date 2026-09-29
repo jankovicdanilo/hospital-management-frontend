@@ -97,6 +97,20 @@
     "sa": "Sa",
     "su": "Su"
   },
+  "monthsShort": {
+    "jan": "Jan",
+    "feb": "Feb",
+    "mar": "Mar",
+    "apr": "Apr",
+    "may": "May",
+    "jun": "Jun",
+    "jul": "Jul",
+    "aug": "Aug",
+    "sep": "Sep",
+    "oct": "Oct",
+    "nov": "Nov",
+    "dec": "Dec"
+  },
   "status": {
     "pending": "Pending",
     "completed": "Completed",
@@ -209,7 +223,9 @@
     "groupCount": "{{count}} appointments",
     "apptTooltip": "{{time}} · {{doctor}} · {{patient}} — click to view",
     "apptTooltipNoTime": "{{doctor}} · {{patient}} — click to view",
-    "groupModalTitle": "{{day}} appointments"
+    "groupModalTitle": "{{day}} appointments",
+    "monthDay": "{{month}} {{day}}",
+    "weekRange": "{{start}} – {{end}}, {{year}}"
   },
   "appointmentForm": {
     "editTitle": "Edit Appointment",

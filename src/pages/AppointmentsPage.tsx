@@ -16,7 +16,11 @@ import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../ut
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
 import { patientToOption } from '../utils/searchableSelectOptions';
-import { translateStatus } from '../utils/i18nLabels';
+import { formatMonthDay, translateStatus } from '../utils/i18nLabels';
+
+// Days shown run Mon–Fri, matching the Monday-based weekStart, so index i maps
+// straight onto these short-day translation keys (see i18n `daysShort`).
+const WEEKDAY_LABEL_KEYS = ['mo', 'tu', 'we', 'th', 'fr'] as const;
 
 const GRID_START_HOUR = 8;
 const GRID_END_HOUR = 20;
@@ -167,14 +171,18 @@ export default function AppointmentsPage() {
         return {
           date,
           iso: formatDateIso(date),
-          weekdayLabel: date.toLocaleDateString('en-US', { weekday: 'short' }),
-          dateLabel: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          weekdayKey: WEEKDAY_LABEL_KEYS[i],
+          dateLabel: formatMonthDay(t, date),
         };
       }),
-    [weekStart],
+    [weekStart, t],
   );
 
-  const weekRangeLabel = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${days[4].dateLabel}, ${weekStart.getFullYear()}`;
+  const weekRangeLabel = t('appointments.weekRange', {
+    start: formatMonthDay(t, weekStart),
+    end: days[4].dateLabel,
+    year: weekStart.getFullYear(),
+  });
 
   const loadWeek = useCallback(async () => {
     setLoading(true);
@@ -395,7 +403,7 @@ export default function AppointmentsPage() {
                 {days.map((day) => (
                   <div key={day.iso} className="flex-1 border-l border-gray-100 px-2 py-3 text-center">
                     <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      {day.weekdayLabel}
+                      {t(`daysShort.${day.weekdayKey}`)}
                     </p>
                     <p className="text-sm font-semibold text-gray-800">{day.dateLabel}</p>
                   </div>
