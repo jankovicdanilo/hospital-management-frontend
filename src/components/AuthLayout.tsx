@@ -74,6 +74,16 @@ export default function AuthLayout() {
                 >
                     {t('nav.appointments')}
                 </NavLink>
+                <NavLink
+                    to="/statistics"
+                    className={({ isActive }) =>
+                        `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                    }
+                >
+                    {t('nav.statistics')}
+                </NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-4">

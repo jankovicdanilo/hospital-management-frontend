@@ -80,6 +80,22 @@ export function toApiDateTimeString(date: Date): string {
   return date.toISOString();
 }
 
+/**
+ * Today's calendar date in the clinic's timezone, as a local `Date` at midnight (same
+ * representation `addDays`/`formatDateIso` use) — for default date ranges that must be
+ * computed from the clinic's "today", not the browser's ambient timezone.
+ */
+export function getTodayInClinicTimeZone(): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: CLINIC_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return new Date(get('year'), get('month') - 1, get('day'));
+}
+
 export function formatDateIso(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
