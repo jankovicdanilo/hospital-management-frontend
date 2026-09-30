@@ -30,6 +30,7 @@ export function useDateRangeSection<T>(
 
   const load = useCallback(async () => {
     if (!enabled || !token) {
+      setState((prev) => ({ ...prev, loading: false }));
       return;
     }
     setState((prev) => ({ ...prev, loading: true, error: '', isRetryable: false }));
