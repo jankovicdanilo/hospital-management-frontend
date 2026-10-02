@@ -20,7 +20,7 @@ export default function AuthLayout() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-white shadow-sm border-b border-gray-100">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between gap-6">
           <div className="flex items-center gap-8">
             <span className="text-lg font-semibold text-gray-800">{t('nav.appName')}</span>
             <nav className="flex items-center gap-1">
@@ -74,9 +74,19 @@ export default function AuthLayout() {
                 >
                     {t('nav.appointments')}
                 </NavLink>
+                <NavLink
+                    to="/statistics"
+                    className={({ isActive }) =>
+                        `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                    }
+                >
+                    {t('nav.statistics')}
+                </NavLink>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <select
               value={i18n.language === 'me' ? 'me' : 'en'}
               onChange={(e) => setLanguage(e.target.value as Language)}
@@ -86,10 +96,10 @@ export default function AuthLayout() {
               <option value="en">EN</option>
               <option value="me">ME</option>
             </select>
-            <span className="text-sm font-medium text-gray-500">{user.username}</span>
+            <span className="text-sm font-medium text-gray-500 whitespace-nowrap">{user.username}</span>
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 whitespace-nowrap hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             >
               {t('nav.logout')}
             </button>
@@ -102,7 +112,7 @@ export default function AuthLayout() {
       </main>
 
       <footer className="bg-white border-t border-gray-200">
-        <div className="mx-auto max-w-5xl px-6 py-4 text-center text-sm text-gray-500">
+        <div className="mx-auto max-w-6xl px-6 py-4 text-center text-sm text-gray-500">
           {t('nav.footer', { year: new Date().getFullYear() })}
         </div>
       </footer>

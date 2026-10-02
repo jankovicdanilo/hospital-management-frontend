@@ -45,7 +45,8 @@
     "durationMinutes": "{{m}}min",
     "durationHoursMinutes": "{{h}}h {{m}}min",
     "unableToReachServer": "Server nije dostupan. Provjerite konekciju i pokušajte ponovo.",
-    "unexpectedError": "Došlo je do neočekivane greške."
+    "unexpectedError": "Došlo je do neočekivane greške.",
+    "retry": "Ponovi"
   },
   "nav": {
     "appName": "Upravljanje bolnicom",
@@ -54,6 +55,7 @@
     "doctors": "Ljekari",
     "procedures": "Procedure",
     "appointments": "Termini",
+    "statistics": "Statistika",
     "logout": "Odjava",
     "footer": "© {{year}} Danilo Janković i Aleksej Kudrjavcev",
     "language": "Jezik"
@@ -291,5 +293,31 @@
   "datePicker": {
     "previousMonth": "Prethodni mjesec",
     "nextMonth": "Sljedeći mjesec"
+  },
+  "statistics": {
+    "title": "Statistika",
+    "subtitle": "Učinak klinike za izabrani vremenski period",
+    "from": "Od",
+    "to": "Do",
+    "noData": "Nema podataka za izabrani vremenski period.",
+    "doctorsLoadTitle": "Opterećenje ljekara",
+    "doctorsLoadSubtitle": "Broj termina po ljekaru",
+    "doctorsRevenueTitle": "Prihod ljekara",
+    "doctorsRevenueSubtitle": "Prihod po ljekaru od završenih termina",
+    "proceduresProfitabilityTitle": "Profitabilnost procedura",
+    "proceduresProfitabilitySubtitle": "Prihod po proceduri od završenih termina",
+    "patientStatisticsTitle": "Statistika pacijenata",
+    "patientStatisticsSubtitle": "Posjete i prihod svih pacijenata",
+    "totalPatients": "Ukupno pacijenata",
+    "totalVisits": "Ukupno posjeta",
+    "totalRevenue": "Ukupan prihod",
+    "averageRevenuePerPatient": "Prosječan prihod po pacijentu",
+    "visitsOverTime": "Posjete kroz vrijeme",
+    "topPatientsTitle": "Najbolji pacijenti",
+    "columnName": "Ime",
+    "columnVisits": "Posjete",
+    "columnRevenue": "Prihod",
+    "completedCountDetail": "{{count}} završenih termina",
+    "timesPerformedDetail": "Izvršeno {{count}} puta"
   }
 }
