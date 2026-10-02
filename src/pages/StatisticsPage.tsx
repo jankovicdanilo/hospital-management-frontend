@@ -1,31 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { useAuth } from '../context/AuthContext';
-import { getDoctorsLoad, getDoctorsRevenue, getPatientStatistics, getProceduresProfitability } from '../api/statistics';
+import {
+  getDoctorsLoad,
+  getDoctorsLoadTimeline,
+  getDoctorsRevenue,
+  getPatientStatistics,
+  getProceduresProfitability,
+} from '../api/statistics';
 import type {
   DoctorLoadDto,
+  DoctorLoadTimelineDto,
   DoctorRevenueDto,
   PatientStatisticsDto,
   ProcedureProfitabilityDto,
   VisitsOverTimeDto,
 } from '../types/statistics';
 import { useDateRangeSection } from '../hooks/useDateRangeSection';
-import { formatDateIso, getTodayInClinicTimeZone } from '../utils/appointmentDateTime';
+import { defaultStatisticsDateRange, formatDateIso } from '../utils/appointmentDateTime';
+import { formatPeriodMonthLabel } from '../utils/i18nLabels';
 import { formatCurrency } from '../utils/currency';
 import DatePicker from '../components/DatePicker';
 import StatCard from '../components/StatCard';
 import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
-
-const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as const;
-
-function formatMonthLabel(t: TFunction, period: string): string {
-  const [year, month] = period.split('-');
-  const monthKey = MONTH_KEYS[Number(month) - 1];
-  return `${t(`monthsShort.${monthKey}`)} '${year.slice(2)}`;
-}
 
 /** Fills gaps between the first and last returned month with zero-visit entries, so the line chart doesn't skip over months with no data. */
 function fillVisitMonthGaps(visits: VisitsOverTimeDto[]): VisitsOverTimeDto[] {
@@ -52,10 +52,13 @@ function fillVisitMonthGaps(visits: VisitsOverTimeDto[]): VisitsOverTimeDto[] {
   return filled;
 }
 
-function defaultDateRange(): { from: string; to: string } {
-  const today = getTodayInClinicTimeZone();
-  const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-  return { from: formatDateIso(oneYearAgo), to: formatDateIso(today) };
+function initialDateRange(searchParams: URLSearchParams): { from: string; to: string } {
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  if (from && to && from <= to) {
+    return { from, to };
+  }
+  return defaultStatisticsDateRange();
 }
 
 interface SectionCardProps {
@@ -115,10 +118,22 @@ function StatisticsSectionCard({
 export default function StatisticsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [range, setRange] = useState(defaultDateRange);
+  const [range, setRange] = useState(() => initialDateRange(searchParams));
   const { from, to } = range;
   const isRangeValid = from <= to;
+
+  useEffect(() => {
+    if (searchParams.get('from') !== from || searchParams.get('to') !== to) {
+      setSearchParams({ from, to }, { replace: true });
+    }
+  }, [from, to, searchParams, setSearchParams]);
+
+  function goToDoctor(doctorId: number) {
+    navigate(`/statistics/doctors/${doctorId}?from=${from}&to=${to}`);
+  }
 
   const [doctorsLoad, retryDoctorsLoad] = useDateRangeSection(
     getDoctorsLoad,
@@ -131,6 +146,14 @@ export default function StatisticsPage() {
   const [doctorsRevenue, retryDoctorsRevenue] = useDateRangeSection(
     getDoctorsRevenue,
     [] as DoctorRevenueDto[],
+    from,
+    to,
+    user?.token,
+    isRangeValid,
+  );
+  const [doctorsLoadTimeline, retryDoctorsLoadTimeline] = useDateRangeSection(
+    getDoctorsLoadTimeline,
+    [] as DoctorLoadTimelineDto[],
     from,
     to,
     user?.token,
@@ -204,6 +227,7 @@ export default function StatisticsPage() {
             getLabel={(d) => d.doctorName}
             getValue={(d) => d.appointmentCount}
             formatValue={(v) => String(Math.round(v))}
+            onBarClick={(d) => goToDoctor(d.doctorId)}
           />
         </StatisticsSectionCard>
 
@@ -224,6 +248,35 @@ export default function StatisticsPage() {
             getValue={(d) => d.revenue}
             formatValue={formatCurrency}
             getTooltipDetail={(d) => t('statistics.completedCountDetail', { count: d.completedCount })}
+            onBarClick={(d) => goToDoctor(d.doctorId)}
+          />
+        </StatisticsSectionCard>
+      </div>
+
+      <div className="mt-6">
+        <StatisticsSectionCard
+          title={t('statistics.doctorsLoadTimelineTitle')}
+          subtitle={t('statistics.doctorsLoadTimelineSubtitle')}
+          loading={doctorsLoadTimeline.loading}
+          error={doctorsLoadTimeline.error}
+          isRetryable={doctorsLoadTimeline.isRetryable}
+          onRetry={retryDoctorsLoadTimeline}
+          isEmpty={
+            !doctorsLoadTimeline.loading && !doctorsLoadTimeline.error && doctorsLoadTimeline.data.length === 0
+          }
+          emptyMessage={t('statistics.noData')}
+        >
+          <LineChart
+            series={doctorsLoadTimeline.data.map((d) => ({
+              id: d.doctorId,
+              label: d.doctorName,
+              data: d.points,
+              onClick: () => goToDoctor(d.doctorId),
+            }))}
+            getId={(p) => p.period}
+            getLabel={(p) => formatPeriodMonthLabel(t, p.period)}
+            getValue={(p) => p.visits}
+            formatValue={(v) => String(Math.round(v))}
           />
         </StatisticsSectionCard>
       </div>
@@ -285,7 +338,7 @@ export default function StatisticsPage() {
                 <LineChart
                   data={visitsOverTime}
                   getId={(d) => d.period}
-                  getLabel={(d) => formatMonthLabel(t, d.period)}
+                  getLabel={(d) => formatPeriodMonthLabel(t, d.period)}
                   getValue={(d) => d.visits}
                   formatValue={(v) => String(Math.round(v))}
                 />

@@ -1,6 +1,6 @@
 ---
 name: service-lookup
-description: Use this skill when you need to interact with {service-name} backend (for fetching or updating).
+description: Use this skill when a prompt names a backend service (e.g. appointment-service, statistics-service) whose endpoints or DTOs you need to fetch or update.
 ---
 
 # Service Lookup
@@ -10,7 +10,7 @@ description: Use this skill when you need to interact with {service-name} backen
 1. Identify every service name mentioned in the prompt (e.g.
    "patient-service" — a prompt may name more than one, e.g. a page
    that combines doctor-service and doctor-schedule-service).
-2. For each one, read `../references/{service-name}-contract.md` to
+2. For each one, read `references/{service-name}-contract.md` to
    get that service's endpoints and DTOs.
 3. Implement the feature using those endpoints/DTOs, following the
    general API conventions already provided in the prompt.
