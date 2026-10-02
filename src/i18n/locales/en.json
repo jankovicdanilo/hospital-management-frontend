@@ -304,6 +304,8 @@
     "doctorsLoadSubtitle": "Appointments per doctor",
     "doctorsRevenueTitle": "Doctors Revenue",
     "doctorsRevenueSubtitle": "Revenue per doctor from completed appointments",
+    "doctorsLoadTimelineTitle": "Doctor Load Timeline",
+    "doctorsLoadTimelineSubtitle": "Appointment load per doctor over time",
     "proceduresProfitabilityTitle": "Procedures Profitability",
     "proceduresProfitabilitySubtitle": "Revenue per procedure from completed appointments",
     "patientStatisticsTitle": "Patient Statistics",
@@ -319,5 +321,21 @@
     "columnRevenue": "Revenue",
     "completedCountDetail": "{{count}} completed appointments",
     "timesPerformedDetail": "Performed {{count}} times"
+  },
+  "doctorStatistics": {
+    "backToStatistics": "Back to Statistics",
+    "loading": "Loading doctor statistics…",
+    "notFoundTitle": "Doctor not found",
+    "notFoundMessage": "This doctor doesn't exist or has no data for the selected date range.",
+    "appointments": "Appointments",
+    "completed": "Completed",
+    "revenue": "Revenue",
+    "uniquePatients": "Unique Patients",
+    "statusBreakdownTitle": "Status Breakdown",
+    "statusBreakdownSubtitle": "Appointments by status",
+    "visitsOverTimeTitle": "Visits Over Time",
+    "visitsOverTimeSubtitle": "Appointments per month",
+    "topProceduresTitle": "Top Procedures",
+    "columnTimesPerformed": "Times Performed"
   }
 }

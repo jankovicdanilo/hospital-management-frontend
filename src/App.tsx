@@ -15,6 +15,7 @@ import AppointmentsPage from './pages/AppointmentsPage';
 import AppointmentFormPage from './pages/AppointmentFormPage';
 import AppointmentDetailPage from './pages/AppointmentDetailPage';
 import StatisticsPage from './pages/StatisticsPage';
+import DoctorStatisticsDetailPage from './pages/DoctorStatisticsDetailPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
             <Route path="/appointments/:id" element={<AppointmentDetailPage />} />
             <Route path="/appointments/:id/edit" element={<AppointmentFormPage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/statistics/doctors/:doctorId" element={<DoctorStatisticsDetailPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
