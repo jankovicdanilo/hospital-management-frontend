@@ -38,3 +38,25 @@ export interface PatientStatisticsDto {
   visitsOverTime: VisitsOverTimeDto[];
   topPatients: TopPatientDto[];
 }
+
+export interface DoctorLoadTimelineDto {
+  doctorId: number;
+  doctorName: string;
+  totalAppointments: number;
+  points: VisitsOverTimeDto[];
+}
+
+export interface DoctorStatisticsDto {
+  doctorId: number;
+  doctorName: string;
+  appointmentCount: number;
+  pendingCount: number;
+  completedCount: number;
+  missedCount: number;
+  cancelledCount: number;
+  revenue: number;
+  uniquePatients: number;
+  visitsOverTime: VisitsOverTimeDto[];
+  topProcedures: ProcedureProfitabilityDto[];
+  topPatients: TopPatientDto[];
+}

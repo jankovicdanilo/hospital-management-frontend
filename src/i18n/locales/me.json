@@ -304,6 +304,8 @@
     "doctorsLoadSubtitle": "Broj termina po ljekaru",
     "doctorsRevenueTitle": "Prihod ljekara",
     "doctorsRevenueSubtitle": "Prihod po ljekaru od završenih termina",
+    "doctorsLoadTimelineTitle": "Vremenski prikaz opterećenja ljekara",
+    "doctorsLoadTimelineSubtitle": "Opterećenje termina po ljekaru kroz vrijeme",
     "proceduresProfitabilityTitle": "Profitabilnost procedura",
     "proceduresProfitabilitySubtitle": "Prihod po proceduri od završenih termina",
     "patientStatisticsTitle": "Statistika pacijenata",
@@ -319,5 +321,21 @@
     "columnRevenue": "Prihod",
     "completedCountDetail": "{{count}} završenih termina",
     "timesPerformedDetail": "Izvršeno {{count}} puta"
+  },
+  "doctorStatistics": {
+    "backToStatistics": "Nazad na statistiku",
+    "loading": "Učitavanje statistike ljekara…",
+    "notFoundTitle": "Ljekar nije pronađen",
+    "notFoundMessage": "Ovaj ljekar ne postoji ili nema podataka za izabrani vremenski period.",
+    "appointments": "Termini",
+    "completed": "Završeni",
+    "revenue": "Prihod",
+    "uniquePatients": "Jedinstveni pacijenti",
+    "statusBreakdownTitle": "Pregled po statusu",
+    "statusBreakdownSubtitle": "Termini po statusu",
+    "visitsOverTimeTitle": "Posjete kroz vrijeme",
+    "visitsOverTimeSubtitle": "Termini po mjesecu",
+    "topProceduresTitle": "Najbolje procedure",
+    "columnTimesPerformed": "Broj izvršenja"
   }
 }

@@ -117,3 +117,10 @@ export function addDays(date: Date, days: number): Date {
   d.setDate(d.getDate() + days);
   return d;
 }
+
+/** Last 12 months up to today, computed from the clinic's "today" rather than the browser's. */
+export function defaultStatisticsDateRange(): { from: string; to: string } {
+  const today = getTodayInClinicTimeZone();
+  const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+  return { from: formatDateIso(oneYearAgo), to: formatDateIso(today) };
+}

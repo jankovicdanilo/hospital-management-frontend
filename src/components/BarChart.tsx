@@ -9,6 +9,7 @@ export interface BarChartProps<T> {
   formatValue?: (value: number) => string;
   getTooltipDetail?: (d: T) => string | null;
   barColor?: string;
+  onBarClick?: (d: T) => void;
 }
 
 interface TooltipState {
@@ -48,11 +49,13 @@ export default function BarChart<T>({
   formatValue = (value) => String(value),
   getTooltipDetail,
   barColor = DEFAULT_BAR_COLOR,
+  onBarClick,
 }: BarChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(0);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -112,6 +115,8 @@ export default function BarChart<T>({
 
     g.selectAll('.tick line').attr('stroke', '#e5e7eb');
 
+    const isHovered = (d: T) => onBarClick !== undefined && hoveredId === String(getId(d));
+
     g.selectAll('text.bar-label')
       .data(data)
       .join('text')
@@ -121,7 +126,8 @@ export default function BarChart<T>({
       .attr('dy', '0.32em')
       .attr('text-anchor', 'end')
       .attr('font-size', '12px')
-      .attr('fill', '#374151')
+      .attr('fill', (d) => (isHovered(d) ? barColor : '#374151'))
+      .attr('font-weight', (d) => (isHovered(d) ? 600 : 400))
       .text((d) => (context ? truncateToWidth(context, getLabel(d), MARGIN.left - 16) : getLabel(d)));
 
     g.selectAll('rect.bar')
@@ -133,7 +139,7 @@ export default function BarChart<T>({
       .attr('width', (d) => x(getValue(d)))
       .attr('height', y.bandwidth())
       .attr('rx', 4)
-      .attr('fill', barColor);
+      .attr('fill', (d) => (isHovered(d) ? (d3.color(barColor)?.darker(0.4).toString() ?? barColor) : barColor));
 
     // Full-width transparent hit target per row so hovering anywhere in the
     // row (including short/zero-length bars and the label) shows the tooltip.
@@ -146,7 +152,7 @@ export default function BarChart<T>({
       .attr('width', innerWidth + MARGIN.left)
       .attr('height', y.bandwidth())
       .attr('fill', 'transparent')
-      .style('cursor', 'pointer')
+      .style('cursor', onBarClick ? 'pointer' : 'default')
       .on('mousemove', (event, d) => {
         const [mx, my] = d3.pointer(event, containerRef.current);
         setTooltip({
@@ -156,9 +162,14 @@ export default function BarChart<T>({
           value: formatValue(getValue(d)),
           detail: getTooltipDetail ? getTooltipDetail(d) : null,
         });
+        setHoveredId(String(getId(d)));
       })
-      .on('mouseleave', () => setTooltip(null));
-  }, [data, width, formatValue, getTooltipDetail, barColor, getId, getLabel, getValue]);
+      .on('mouseleave', () => {
+        setTooltip(null);
+        setHoveredId(null);
+      })
+      .on('click', (_event, d) => onBarClick?.(d));
+  }, [data, width, formatValue, getTooltipDetail, barColor, onBarClick, hoveredId, getId, getLabel, getValue]);
 
   return (
     <div ref={containerRef} className="relative w-full" style={{ height: chartHeight }}>

@@ -1,6 +1,8 @@
 import type {
   DoctorLoadDto,
+  DoctorLoadTimelineDto,
   DoctorRevenueDto,
+  DoctorStatisticsDto,
   PatientStatisticsDto,
   ProcedureProfitabilityDto,
 } from '../types/statistics';
@@ -63,4 +65,39 @@ export async function getPatientStatistics(
   }
 
   return response.json() as Promise<PatientStatisticsDto>;
+}
+
+export async function getDoctorsLoadTimeline(
+  from: string,
+  to: string,
+  token: string,
+): Promise<DoctorLoadTimelineDto[]> {
+  const response = await fetch(
+    `${STATISTICS_BASE_URL}/api/statistics/doctors/load/timeline?from=${from}&to=${to}`,
+    { headers: authHeaders(token) },
+  );
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<DoctorLoadTimelineDto[]>;
+}
+
+export async function getDoctorStatistics(
+  doctorId: number,
+  from: string,
+  to: string,
+  token: string,
+): Promise<DoctorStatisticsDto> {
+  const response = await fetch(
+    `${STATISTICS_BASE_URL}/api/statistics/doctors/${doctorId}?from=${from}&to=${to}`,
+    { headers: authHeaders(token) },
+  );
+
+  if (!response.ok) {
+    return throwApiError(response);
+  }
+
+  return response.json() as Promise<DoctorStatisticsDto>;
 }

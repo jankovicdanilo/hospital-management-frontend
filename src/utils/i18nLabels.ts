@@ -34,3 +34,10 @@ export function formatMonthDay(t: TFunction, date: Date): string {
     day: date.getDate(),
   });
 }
+
+// Formats a "yyyy-MM" statistics period (e.g. "2026-03") as a short localized
+// month + 2-digit year (e.g. "Mar '26").
+export function formatPeriodMonthLabel(t: TFunction, period: string): string {
+  const [year, month] = period.split('-');
+  return `${t(`monthsShort.${MONTH_KEYS[Number(month) - 1]}`)} '${year.slice(2)}`;
+}
