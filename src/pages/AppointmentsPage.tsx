@@ -12,7 +12,17 @@ import type { AppointmentListResponseDto, AppointmentStatus } from '../types/app
 import type { DoctorResponseDto } from '../types/doctor';
 import type { ProcedureListDto } from '../types/procedure';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
-import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../utils/appointmentDateTime';
+import {
+  CLINIC_TIME_ZONE,
+  addDays,
+  clinicLocalDateIso,
+  clinicLocalDayStartUtc,
+  clinicLocalMinutesOfDay,
+  formatDateIso,
+  formatUtcDateIso,
+  getMonday,
+  parseDurationToMinutes,
+} from '../utils/appointmentDateTime';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
 import { patientToOption } from '../utils/searchableSelectOptions';
@@ -55,7 +65,13 @@ type PositionedItem = PositionedSingle | PositionedGroup;
 function formatTimeRange(appt: AppointmentListResponseDto): string {
   const start = new Date(appt.dateTime);
   const end = new Date(start.getTime() + parseDurationToMinutes(appt.duration) * 60000);
-  const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const fmt = (d: Date) =>
+    d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: CLINIC_TIME_ZONE,
+    });
   return `${fmt(start)}–${fmt(end)}`;
 }
 
@@ -74,7 +90,7 @@ function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[]
   const items = appointments
     .map((appt) => {
       const start = new Date(appt.dateTime);
-      const startMinutes = start.getHours() * 60 + start.getMinutes();
+      const startMinutes = clinicLocalMinutesOfDay(start);
       const endMinutes = startMinutes + parseDurationToMinutes(appt.duration);
       const layoutEndMinutes = Math.max(endMinutes, startMinutes + MIN_BLOCK_MINUTES);
       return { appt, startMinutes, endMinutes, layoutEndMinutes };
@@ -189,9 +205,19 @@ export default function AppointmentsPage() {
     setError('');
     try {
       const singleDoctorId = doctorFilterIds.length === 1 ? Number(doctorFilterIds[0]) : undefined;
+
+      // The week is Mon–Fri in clinic-local terms, but the API filters by UTC day, and a
+      // local day can spill into the neighboring UTC day — so the fetched UTC range covers
+      // the full span of UTC instants the local Mon–Fri window overlaps, and appointments are
+      // bucketed into local days client-side afterwards.
+      const weekStartUtc = clinicLocalDayStartUtc(formatDateIso(weekStart));
+      const weekEndUtcExclusive = clinicLocalDayStartUtc(formatDateIso(addDays(weekStart, 5)));
+      const startDate = formatUtcDateIso(weekStartUtc);
+      const endDate = formatUtcDateIso(new Date(weekEndUtcExclusive.getTime() - 1));
+
       const data = await getAppointmentsByWeek(
-        formatDateIso(weekStart),
-        formatDateIso(addDays(weekStart, 4)),
+        startDate,
+        endDate,
         user!.token,
         singleDoctorId,
         patientFilterId ? Number(patientFilterId) : undefined,
@@ -232,7 +258,7 @@ export default function AppointmentsPage() {
   const appointmentsByDay = useMemo(
     () =>
       days.map((day) =>
-        layoutDay(filteredAppointments.filter((a) => formatDateIso(new Date(a.dateTime)) === day.iso)),
+        layoutDay(filteredAppointments.filter((a) => clinicLocalDateIso(new Date(a.dateTime)) === day.iso)),
       ),
     [filteredAppointments, days],
   );

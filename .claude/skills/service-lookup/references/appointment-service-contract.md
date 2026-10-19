@@ -10,12 +10,14 @@ conventions.
 - GET /api/appointment?[doctorId]&[patientId]&[date]&[startDate]&[endDate]&[status]&pageNumber&pageSize → PagedResult<AppointmentListResponseDto> (list, paginated)
     - Provide either `date` (single day) or `startDate`+`endDate` (range) — not both meaningfully, range takes priority if both are sent
     - `startDate`/`endDate` must both be present together or both omitted
+    - `date`, `startDate` and `endDate` are UTC days (`yyyy-MM-dd`)
 - GET /api/appointment/{id} → AppointmentResponseDto
 - POST /api/appointment, body AppointmentCreateRequestDto → AppointmentCreateResponseDto
 - PUT /api/appointment, body AppointmentUpdateRequestDto → AppointmentUpdateResponseDto
 - DELETE /api/appointment/{id} → success/failure only
 - PATCH /api/appointment/status, body AppointmentStatusUpdateDto → success/failure, message only
 - GET /api/appointment/free-slots?doctorId={id}&date={date} → TimeSlotDto[]
+    - `date` is a UTC day; slots that have already started are omitted
 - GET /api/appointment/patient/{patientId}/history → AppointmentResponseDto[]
 - GET /api/appointment/patient/{patientId}/summary → PatientSummaryResponseDto
 
@@ -61,14 +63,12 @@ a future rebuild doesn't have to rediscover them by trial and error:
 
 - The frontend sends `dateTime` on create/update as a genuine UTC ISO
     string (`date.toISOString()`), matching the general DateTime/timezone
-    rule in api-conventions.md. This was previously sent as a local,
+    rule in time-handling.md. This was previously sent as a local,
     timezone-less string, which caused schedule/working-hours validation
     to silently fail — do not revert to that approach.
-- `TimeSlotDto.start`/`.end` format was never pinned down (could be a
-  bare time-of-day like `"09:00:00"` or a full ISO datetime). The
-  frontend parses defensively: if the string contains `T` it's treated
-  as a full datetime, otherwise it's combined with the query date as
-  `${date}T${time}`.
+- `TimeSlotDto.start`/`.end` are full UTC ISO 8601 instants (e.g.
+  `"2026-10-19T07:00:00Z"`) for the requested UTC day. See
+  time-handling.md for how a clinic-local date maps onto them.
 - The free-slots endpoint appears to throw a business-rule error (e.g.
   409, message like "Doctor does not work on Wednesday") rather than
   returning `200` with an empty array when the doctor has no schedule

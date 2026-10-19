@@ -9,7 +9,7 @@ no write endpoints.
 ## Endpoints
 
 All endpoints are GET, require the bearer token, and take `from` and
-`to` — both required, `yyyy-MM-dd`, both inclusive. None are paginated:
+`to` — both required, UTC days as `yyyy-MM-dd`, both inclusive. None are paginated:
 each returns its full result directly, unwrapped (no `PagedResult`).
 
 - GET /api/statistics/doctors/load?from&to → DoctorLoadDto[] (sorted by appointmentCount, descending)
@@ -84,11 +84,9 @@ Follow the shapes in api-conventions.md (`throwApiError` applies as-is).
 ## Frontend implementation notes
 
 - Send `from`/`to` as plain `yyyy-MM-dd` dates, never as ISO datetimes.
-  The backend interprets them as clinic-local calendar days
-  (`Europe/Podgorica`), so any default range ("this year", "last 12
-  months") must be computed from today's date in the clinic timezone,
-  not the browser's — see the DateTime/timezone section in
-  api-conventions.md.
+  They are UTC days, both inclusive, and the filter is labelled UTC.
+  Default ranges ("this year", "last 12 months") start from today's UTC
+  date — see time-handling.md.
 - `/patients` `visitsOverTime` omits months with no visits. Fill the
   gaps with `visits: 0` on the client before drawing a line chart. The
   timeline endpoint and `DoctorStatisticsDto.visitsOverTime` are

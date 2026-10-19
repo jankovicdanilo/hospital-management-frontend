@@ -1,9 +1,31 @@
+import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
+
 function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-/** The clinic's IANA timezone, matching ClinicSettings.TimeZoneId on the backend. */
-export const CLINIC_TIME_ZONE = 'Europe/Podgorica';
+/** The clinic's IANA timezone, from config — never hardcoded elsewhere. */
+export const CLINIC_TIME_ZONE = import.meta.env.VITE_CLINIC_TIME_ZONE as string;
+
+const WEEK_DAY_NAMES: DayOfWeek[] = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
+const WEEK_ORDER: DayOfWeek[] = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
 /** How far `timeZone`'s local wall clock is ahead of UTC at the given instant, in ms. */
 function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
@@ -23,9 +45,9 @@ function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
 }
 
 /**
- * Converts a wall-clock date + time-of-day in `timeZone` (e.g. the clinic's business hours)
- * into the real UTC instant it represents — accounts for that zone's DST rules instead of
- * assuming the browser runs in the same timezone.
+ * Converts a wall-clock date + time-of-day in `timeZone` into the real UTC instant it
+ * represents — accounts for that zone's DST rules instead of assuming the browser runs in
+ * the same timezone.
  */
 function zonedWallTimeToUtc(dateIso: string, timeStr: string, timeZone: string): Date {
   const asIfUtc = new Date(`${dateIso}T${timeStr}Z`);
@@ -63,45 +85,19 @@ export function minutesToDurationString(totalMinutes: number): string {
   return `${pad(h)}:${pad(m)}:00`;
 }
 
-/**
- * Parses a slot time string that is either a full ISO datetime or a bare "HH:mm:ss" time-of-day.
- * Bare time-of-day values are clinic business hours, so they're interpreted in the clinic's own
- * timezone rather than the browser's ambient local timezone.
- */
-export function parseSlotTime(dateIso: string, timeStr: string): Date {
-  if (timeStr.includes('T')) {
-    return new Date(timeStr);
-  }
-  return zonedWallTimeToUtc(dateIso, timeStr, CLINIC_TIME_ZONE);
-}
-
 /** Formats a Date as a UTC ISO string for the backend (e.g. "2026-08-14T10:00:00Z"). */
 export function toApiDateTimeString(date: Date): string {
   return date.toISOString();
-}
-
-/**
- * Today's calendar date in the clinic's timezone, as a local `Date` at midnight (same
- * representation `addDays`/`formatDateIso` use) — for default date ranges that must be
- * computed from the clinic's "today", not the browser's ambient timezone.
- */
-export function getTodayInClinicTimeZone(): Date {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: CLINIC_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date());
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-  return new Date(get('year'), get('month') - 1, get('day'));
 }
 
 export function formatDateIso(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-export function formatTimeLabel(date: Date): string {
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+/** Parses a "yyyy-MM-dd" calendar date string into a local midnight `Date` (the inverse of `formatDateIso`). */
+export function parseDateIso(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
 export function getMonday(date: Date): Date {
@@ -118,9 +114,121 @@ export function addDays(date: Date, days: number): Date {
   return d;
 }
 
-/** Last 12 months up to today, computed from the clinic's "today" rather than the browser's. */
+/** Formats a UTC instant as its "yyyy-MM-dd" UTC calendar day — the format the API's date params use. */
+export function formatUtcDateIso(date: Date): string {
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+/** The clinic-local calendar day (yyyy-MM-dd) that a real instant falls on. */
+export function clinicLocalDateIso(date: Date): string {
+  return date.toLocaleDateString('en-CA', { timeZone: CLINIC_TIME_ZONE });
+}
+
+/** Minutes since clinic-local midnight for a real instant — for positioning appointments on a local time grid. */
+export function clinicLocalMinutesOfDay(date: Date): number {
+  const [h, m] = formatTimeOfDayInZone(date, CLINIC_TIME_ZONE).split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** The real UTC instant marking the start of `dateIso`'s clinic-local day. */
+export function clinicLocalDayStartUtc(dateIso: string): Date {
+  return zonedWallTimeToUtc(dateIso, '00:00:00', CLINIC_TIME_ZONE);
+}
+
+/**
+ * The UTC calendar day(s) (1 or 2) that a clinic-local calendar day overlaps. A local day's
+ * boundaries rarely line up with UTC midnight, so most of a local day falls on one UTC day
+ * with a sliver spilling into the neighboring one.
+ */
+export function utcDaysForLocalDate(dateIso: string): string[] {
+  const start = clinicLocalDayStartUtc(dateIso);
+  const nextDateIso = formatDateIso(addDays(parseDateIso(dateIso), 1));
+  const end = clinicLocalDayStartUtc(nextDateIso);
+  const startDayIso = formatUtcDateIso(start);
+  const endDayIso = formatUtcDateIso(new Date(end.getTime() - 1));
+  return startDayIso === endDayIso ? [startDayIso] : [startDayIso, endDayIso];
+}
+
+/** Last 12 months up to today, counted back from today's UTC date. */
 export function defaultStatisticsDateRange(): { from: string; to: string } {
-  const today = getTodayInClinicTimeZone();
-  const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-  return { from: formatDateIso(oneYearAgo), to: formatDateIso(today) };
+  const todayIso = formatUtcDateIso(new Date());
+  const [y, m, d] = todayIso.split('-').map(Number);
+  const oneYearAgo = new Date(Date.UTC(y - 1, m - 1, d));
+  return { from: formatUtcDateIso(oneYearAgo), to: todayIso };
+}
+
+/** The UTC weekday name for a "yyyy-MM-dd" UTC calendar date string. */
+function utcWeekdayOfIsoDate(utcDateIso: string): DayOfWeek {
+  const [y, m, d] = utcDateIso.split('-').map(Number);
+  return WEEK_DAY_NAMES[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}
+
+export interface ScheduleWindow {
+  start: Date;
+  end: Date;
+}
+
+/**
+ * The real time window(s) of a doctor's UTC-based weekly schedule that fall within a
+ * clinic-local calendar day. Since a local day can straddle two UTC days, this checks both
+ * UTC days the local day overlaps and clips each matching schedule window to the local day's
+ * bounds — a local date is bookable only if this returns at least one window.
+ */
+export function scheduleWindowsForLocalDate(
+  schedules: DoctorScheduleResponseDto[],
+  localDateIso: string,
+): ScheduleWindow[] {
+  const localStart = clinicLocalDayStartUtc(localDateIso);
+  const localEnd = clinicLocalDayStartUtc(formatDateIso(addDays(parseDateIso(localDateIso), 1)));
+  const windows: ScheduleWindow[] = [];
+
+  for (const utcDateIso of utcDaysForLocalDate(localDateIso)) {
+    const schedule = schedules.find((s) => s.dayOfWeek === utcWeekdayOfIsoDate(utcDateIso));
+    if (!schedule) {
+      continue;
+    }
+
+    const [y, m, d] = utcDateIso.split('-').map(Number);
+    const utcDayStartMs = Date.UTC(y, m - 1, d);
+    const start = new Date(Math.max(utcDayStartMs + schedule.startHour * 3_600_000, localStart.getTime()));
+    const end = new Date(Math.min(utcDayStartMs + schedule.endHour * 3_600_000, localEnd.getTime()));
+
+    if (start.getTime() < end.getTime()) {
+      windows.push({ start, end });
+    }
+  }
+
+  return windows;
+}
+
+/**
+ * Which clinic-local weekdays a doctor works, derived from their UTC schedule. Checked
+ * against one reference week (the current week) rather than the schedule's raw UTC weekday
+ * names, since a UTC day's working hours can spill into the neighboring local weekday.
+ */
+export function workingLocalWeekdays(schedules: DoctorScheduleResponseDto[]): DayOfWeek[] {
+  const monday = getMonday(new Date());
+  return WEEK_ORDER.filter((_, i) => scheduleWindowsForLocalDate(schedules, formatDateIso(addDays(monday, i))).length > 0);
+}
+
+/** The nearest UTC calendar date (today or later) that falls on the given UTC weekday. */
+function nextUtcDateIsoForWeekday(weekday: DayOfWeek): string {
+  const targetIdx = WEEK_DAY_NAMES.indexOf(weekday);
+  const now = new Date();
+  const diff = (targetIdx - now.getUTCDay() + 7) % 7;
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+  return formatUtcDateIso(d);
+}
+
+/**
+ * Formats a doctor schedule's UTC hour as its clinic-local "HH:mm" equivalent, so the
+ * schedule editor can show both side by side. Uses the nearest upcoming occurrence of the
+ * schedule's UTC weekday to resolve the current DST offset — the same UTC hour can map to a
+ * different local hour depending on the season.
+ */
+export function utcHourToClinicLocalLabel(utcWeekday: DayOfWeek, hour: number): string {
+  const utcDateIso = nextUtcDateIsoForWeekday(utcWeekday);
+  const [y, m, d] = utcDateIso.split('-').map(Number);
+  const instant = new Date(Date.UTC(y, m - 1, d) + hour * 3_600_000);
+  return formatTimeOfDayInZone(instant, CLINIC_TIME_ZONE).slice(0, 5);
 }

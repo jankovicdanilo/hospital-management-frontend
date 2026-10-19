@@ -16,6 +16,7 @@ import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedu
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import { translateDayOfWeek } from '../utils/i18nLabels';
+import { CLINIC_TIME_ZONE, utcHourToClinicLocalLabel } from '../utils/appointmentDateTime';
 
 const WEEKDAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -30,6 +31,15 @@ const emptyScheduleForm: ScheduleFormState = { startHour: '', endHour: '' };
 
 function formatHour(hour: number): string {
   return `${hour}:00`;
+}
+
+/** The clinic-local "HH:mm" equivalent of a schedule's UTC hour, or null while the field is empty/invalid. */
+function localHourLabel(day: DayOfWeek, hourStr: string): string | null {
+  const hour = Number(hourStr);
+  if (!hourStr.trim() || Number.isNaN(hour)) {
+    return null;
+  }
+  return utcHourToClinicLocalLabel(day, hour);
 }
 
 export default function DoctorDetailPage() {
@@ -101,13 +111,13 @@ export default function DoctorDetailPage() {
 
     if (!form.startHour.trim() || Number.isNaN(start)) {
       errors.startHour = t('doctorDetail.startHourRequired');
-    } else if (start < 8 || start > 19) {
+    } else if (start < 0 || start > 23) {
       errors.startHour = t('doctorDetail.startHourRange');
     }
 
     if (!form.endHour.trim() || Number.isNaN(end)) {
       errors.endHour = t('doctorDetail.endHourRequired');
-    } else if (end < 9 || end > 20) {
+    } else if (end < 1 || end > 24) {
       errors.endHour = t('doctorDetail.endHourRange');
     }
 
@@ -260,9 +270,18 @@ export default function DoctorDetailPage() {
                         <p className="font-medium text-gray-800">{translateDayOfWeek(t, day)}</p>
                         {!isEditing &&
                           (schedule ? (
-                            <p className="text-sm text-gray-600 mt-0.5">
-                              {formatHour(schedule.startHour)}–{formatHour(schedule.endHour)}
-                            </p>
+                            <>
+                              <p className="text-sm text-gray-600 mt-0.5">
+                                {formatHour(schedule.startHour)}–{formatHour(schedule.endHour)} UTC
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {t('doctorDetail.localEquivalent', {
+                                  start: utcHourToClinicLocalLabel(schedule.dayOfWeek, schedule.startHour),
+                                  end: utcHourToClinicLocalLabel(schedule.dayOfWeek, schedule.endHour),
+                                  zone: CLINIC_TIME_ZONE,
+                                })}
+                              </p>
+                            </>
                           ) : (
                             <p className="text-sm text-gray-400 mt-0.5">{t('doctorDetail.notScheduled')}</p>
                           ))}
@@ -322,8 +341,8 @@ export default function DoctorDetailPage() {
                             <input
                               id={`start-${day}`}
                               type="number"
-                              min={8}
-                              max={19}
+                              min={0}
+                              max={23}
                               value={form.startHour}
                               onChange={(e) =>
                                 setForm((prev) => ({ ...prev, startHour: e.target.value }))
@@ -334,8 +353,17 @@ export default function DoctorDetailPage() {
                                   : 'border-gray-300 bg-white'
                               }`}
                             />
-                            {formErrors.startHour && (
+                            {formErrors.startHour ? (
                               <p className="mt-1 text-xs text-red-600">{formErrors.startHour}</p>
+                            ) : (
+                              localHourLabel(day, form.startHour) && (
+                                <p className="mt-1 text-xs text-gray-400">
+                                  {t('doctorDetail.localEquivalentSingle', {
+                                    time: localHourLabel(day, form.startHour),
+                                    zone: CLINIC_TIME_ZONE,
+                                  })}
+                                </p>
+                              )
                             )}
                           </div>
 
@@ -349,8 +377,8 @@ export default function DoctorDetailPage() {
                             <input
                               id={`end-${day}`}
                               type="number"
-                              min={9}
-                              max={20}
+                              min={1}
+                              max={24}
                               value={form.endHour}
                               onChange={(e) =>
                                 setForm((prev) => ({ ...prev, endHour: e.target.value }))
@@ -361,8 +389,17 @@ export default function DoctorDetailPage() {
                                   : 'border-gray-300 bg-white'
                               }`}
                             />
-                            {formErrors.endHour && (
+                            {formErrors.endHour ? (
                               <p className="mt-1 text-xs text-red-600">{formErrors.endHour}</p>
+                            ) : (
+                              localHourLabel(day, form.endHour) && (
+                                <p className="mt-1 text-xs text-gray-400">
+                                  {t('doctorDetail.localEquivalentSingle', {
+                                    time: localHourLabel(day, form.endHour),
+                                    zone: CLINIC_TIME_ZONE,
+                                  })}
+                                </p>
+                              )
                             )}
                           </div>
                         </div>
