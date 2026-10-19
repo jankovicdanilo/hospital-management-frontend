@@ -16,6 +16,8 @@ time. Read this together with api-conventions.md.
   `end` as UTC instants for that UTC day. Slots that have already
   started are omitted.
 - The backend does no time zone conversion and holds no zone data.
+- Invoice downloads take an optional `utcOffsetMinutes`: the clinic's UTC offset in minutes on the appointment's own date
+  (not today's). The invoice prints the appointment time shifted by it, so it matches the screen.
 
 ## What the user sees
 
@@ -23,8 +25,12 @@ time. Read this together with api-conventions.md.
   config: `VITE_CLINIC_TIME_ZONE`. It is not hardcoded anywhere else.
 - The browser's time zone is not the clinic's time zone.
 - Statistics From and To are UTC days, labelled "UTC".
-- A schedule shown or edited as UTC hours has its clinic-local
-  equivalent shown beside it, with the zone named.
+- Doctor schedules are shown and edited in clinic-local hours; users
+  never see UTC for them. The frontend converts to and from the UTC
+  hours the API uses, with the clinic's UTC offset on the next
+  occurrence of that weekday, so the hours on a schedule match the
+  slots shown for that day. A local working window that does not fit
+  inside one UTC day is rejected with a clear message.
 
 ## Consequences to respect
 
@@ -45,6 +51,8 @@ working hours cross UTC midnight in some season cannot be represented
 (Los Angeles 09:00-17:00 is 16:00-24:00 UTC in summer but 17:00-01:00
 UTC in winter), and local opening hours move by one hour when daylight
 saving changes. The app supports one clinic time zone at a time.
+Because stored hours are fixed UTC, an existing schedule shows one hour earlier or later in local time after a
+daylight-saving change; saving it again re-applies the intended local hours.
 
 ## Examples
 

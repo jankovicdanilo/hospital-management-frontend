@@ -7,5 +7,5 @@ Before starting, read:
 - [Time handling](.claude/architecture/instructions/time-handling.md)
 
 - Appointments, schedules, free slots and the create/edit page work against the UTC API and show and accept clinic-local times
-- The doctor schedule editor edits UTC hours and shows the local equivalent beside each value
+- The doctor schedule editor works in clinic-local hours, with no UTC wording
 - Statistics From and To are UTC days, labelled as UTC

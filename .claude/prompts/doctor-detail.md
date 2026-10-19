@@ -17,7 +17,8 @@ Before starting, read:
 - Each day row has an action to add a schedule (if not scheduled) or
   edit/remove it (if already scheduled) with inline editing
 - Client-side validation on the schedule form: start hour 0–23, end
-  hour 1–24, end hour must be after start hour
+  hour 1–24 (clinic time), end hour must be after start hour, and the
+  window must fit inside one UTC day once converted
 - On failure, display the backend's error details to the user — for
   field-level validation errors, show each message next to its
   matching field; for other failures, show the message generically

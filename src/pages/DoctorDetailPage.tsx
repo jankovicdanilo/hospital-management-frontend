@@ -16,7 +16,7 @@ import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedu
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import { translateDayOfWeek } from '../utils/i18nLabels';
-import { CLINIC_TIME_ZONE, utcHourToClinicLocalLabel } from '../utils/appointmentDateTime';
+import { localScheduleToUtc, utcScheduleToLocal } from '../utils/appointmentDateTime';
 
 const WEEKDAYS: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -29,17 +29,16 @@ type ScheduleFormErrors = Partial<Record<'startHour' | 'endHour', string>> & { g
 
 const emptyScheduleForm: ScheduleFormState = { startHour: '', endHour: '' };
 
-function formatHour(hour: number): string {
-  return `${hour}:00`;
+/** A schedule's clinic-local day/hours alongside the underlying UTC record the API stores. */
+interface LocalScheduleEntry {
+  schedule: DoctorScheduleResponseDto;
+  day: DayOfWeek;
+  startHour: number;
+  endHour: number;
 }
 
-/** The clinic-local "HH:mm" equivalent of a schedule's UTC hour, or null while the field is empty/invalid. */
-function localHourLabel(day: DayOfWeek, hourStr: string): string | null {
-  const hour = Number(hourStr);
-  if (!hourStr.trim() || Number.isNaN(hour)) {
-    return null;
-  }
-  return utcHourToClinicLocalLabel(day, hour);
+function formatHour(hour: number): string {
+  return `${hour}:00`;
 }
 
 export default function DoctorDetailPage() {
@@ -58,7 +57,9 @@ export default function DoctorDetailPage() {
   const [formErrors, setFormErrors] = useState<ScheduleFormErrors>({});
   const [saving, setSaving] = useState(false);
 
-  const [pendingDelete, setPendingDelete] = useState<DoctorScheduleResponseDto | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ schedule: DoctorScheduleResponseDto; day: DayOfWeek } | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -82,8 +83,15 @@ export default function DoctorDetailPage() {
     void loadData();
   }, [loadData]);
 
-  function scheduleForDay(day: DayOfWeek): DoctorScheduleResponseDto | undefined {
-    return schedules.find((s) => s.dayOfWeek === day);
+  // The API stores schedules by UTC day/hour; the editor works entirely in clinic-local
+  // terms, so every schedule is converted once up front and looked up by local weekday.
+  const localSchedules: LocalScheduleEntry[] = schedules.map((schedule) => ({
+    schedule,
+    ...utcScheduleToLocal(schedule),
+  }));
+
+  function scheduleForDay(day: DayOfWeek): LocalScheduleEntry | undefined {
+    return localSchedules.find((s) => s.day === day);
   }
 
   function startAdd(day: DayOfWeek) {
@@ -92,9 +100,9 @@ export default function DoctorDetailPage() {
     setFormErrors({});
   }
 
-  function startEdit(schedule: DoctorScheduleResponseDto) {
-    setEditingDay(schedule.dayOfWeek);
-    setForm({ startHour: String(schedule.startHour), endHour: String(schedule.endHour) });
+  function startEdit(local: LocalScheduleEntry) {
+    setEditingDay(local.day);
+    setForm({ startHour: String(local.startHour), endHour: String(local.endHour) });
     setFormErrors({});
   }
 
@@ -104,7 +112,7 @@ export default function DoctorDetailPage() {
     setFormErrors({});
   }
 
-  function validate(): ScheduleFormErrors | null {
+  function validate(day: DayOfWeek): ScheduleFormErrors | null {
     const errors: ScheduleFormErrors = {};
     const start = Number(form.startHour);
     const end = Number(form.endHour);
@@ -121,8 +129,12 @@ export default function DoctorDetailPage() {
       errors.endHour = t('doctorDetail.endHourRange');
     }
 
-    if (!errors.startHour && !errors.endHour && end <= start) {
-      errors.endHour = t('doctorDetail.endAfterStart');
+    if (!errors.startHour && !errors.endHour) {
+      if (end <= start) {
+        errors.endHour = t('doctorDetail.endAfterStart');
+      } else if (!localScheduleToUtc({ day, startHour: start, endHour: end })) {
+        errors.endHour = t('doctorDetail.scheduleDoesNotFit');
+      }
     }
 
     return Object.keys(errors).length > 0 ? errors : null;
@@ -131,7 +143,7 @@ export default function DoctorDetailPage() {
   async function handleSubmit(e: FormEvent, day: DayOfWeek) {
     e.preventDefault();
 
-    const errors = validate();
+    const errors = validate(day);
     if (errors) {
       setFormErrors(errors);
       return;
@@ -141,15 +153,16 @@ export default function DoctorDetailPage() {
     setSaving(true);
 
     const existing = scheduleForDay(day);
+    const utc = localScheduleToUtc({ day, startHour: Number(form.startHour), endHour: Number(form.endHour) })!;
 
     try {
       if (existing) {
         await updateDoctorSchedule(
           {
-            id: existing.id,
-            dayOfWeek: day,
-            startHour: Number(form.startHour),
-            endHour: Number(form.endHour),
+            id: existing.schedule.id,
+            dayOfWeek: utc.dayOfWeek,
+            startHour: utc.startHour,
+            endHour: utc.endHour,
           },
           user!.token,
         );
@@ -157,9 +170,9 @@ export default function DoctorDetailPage() {
         await createDoctorSchedule(
           {
             doctorId,
-            dayOfWeek: day,
-            startHour: Number(form.startHour),
-            endHour: Number(form.endHour),
+            dayOfWeek: utc.dayOfWeek,
+            startHour: utc.startHour,
+            endHour: utc.endHour,
           },
           user!.token,
         );
@@ -195,7 +208,7 @@ export default function DoctorDetailPage() {
     setDeleting(true);
     setError('');
     try {
-      await deleteDoctorSchedule(pendingDelete.id, user!.token);
+      await deleteDoctorSchedule(pendingDelete.schedule.id, user!.token);
       setPendingDelete(null);
       await loadData();
     } catch (err) {
@@ -270,18 +283,9 @@ export default function DoctorDetailPage() {
                         <p className="font-medium text-gray-800">{translateDayOfWeek(t, day)}</p>
                         {!isEditing &&
                           (schedule ? (
-                            <>
-                              <p className="text-sm text-gray-600 mt-0.5">
-                                {formatHour(schedule.startHour)}–{formatHour(schedule.endHour)} UTC
-                              </p>
-                              <p className="text-xs text-gray-400">
-                                {t('doctorDetail.localEquivalent', {
-                                  start: utcHourToClinicLocalLabel(schedule.dayOfWeek, schedule.startHour),
-                                  end: utcHourToClinicLocalLabel(schedule.dayOfWeek, schedule.endHour),
-                                  zone: CLINIC_TIME_ZONE,
-                                })}
-                              </p>
-                            </>
+                            <p className="text-sm text-gray-600 mt-0.5">
+                              {formatHour(schedule.startHour)}–{formatHour(schedule.endHour)}
+                            </p>
                           ) : (
                             <p className="text-sm text-gray-400 mt-0.5">{t('doctorDetail.notScheduled')}</p>
                           ))}
@@ -300,7 +304,7 @@ export default function DoctorDetailPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setPendingDelete(schedule)}
+                                onClick={() => setPendingDelete({ schedule: schedule.schedule, day })}
                                 className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                               >
                                 {t('common.remove')}
@@ -353,17 +357,8 @@ export default function DoctorDetailPage() {
                                   : 'border-gray-300 bg-white'
                               }`}
                             />
-                            {formErrors.startHour ? (
+                            {formErrors.startHour && (
                               <p className="mt-1 text-xs text-red-600">{formErrors.startHour}</p>
-                            ) : (
-                              localHourLabel(day, form.startHour) && (
-                                <p className="mt-1 text-xs text-gray-400">
-                                  {t('doctorDetail.localEquivalentSingle', {
-                                    time: localHourLabel(day, form.startHour),
-                                    zone: CLINIC_TIME_ZONE,
-                                  })}
-                                </p>
-                              )
                             )}
                           </div>
 
@@ -389,17 +384,8 @@ export default function DoctorDetailPage() {
                                   : 'border-gray-300 bg-white'
                               }`}
                             />
-                            {formErrors.endHour ? (
+                            {formErrors.endHour && (
                               <p className="mt-1 text-xs text-red-600">{formErrors.endHour}</p>
-                            ) : (
-                              localHourLabel(day, form.endHour) && (
-                                <p className="mt-1 text-xs text-gray-400">
-                                  {t('doctorDetail.localEquivalentSingle', {
-                                    time: localHourLabel(day, form.endHour),
-                                    zone: CLINIC_TIME_ZONE,
-                                  })}
-                                </p>
-                              )
                             )}
                           </div>
                         </div>
@@ -438,7 +424,7 @@ export default function DoctorDetailPage() {
             <p className="text-sm text-gray-600 mb-6">
               <Trans
                 i18nKey="doctorDetail.removeScheduleBody"
-                values={{ day: translateDayOfWeek(t, pendingDelete.dayOfWeek) }}
+                values={{ day: translateDayOfWeek(t, pendingDelete.day) }}
                 components={{ bold: <span className="font-medium text-gray-800" /> }}
               />
             </p>
