@@ -9,9 +9,10 @@ export async function downloadInvoice(
   format: InvoiceFormat,
   language: string,
   token: string,
+  utcOffsetMinutes: number,
 ): Promise<Blob> {
   const response = await fetch(
-    `${INVOICE_BASE_URL}/api/billing/${appointmentId}?format=${format}&language=${language}`,
+    `${INVOICE_BASE_URL}/api/billing/${appointmentId}?format=${format}&language=${language}&utcOffsetMinutes=${utcOffsetMinutes}`,
     { headers: authHeaders(token) },
   );
 

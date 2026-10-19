@@ -5,6 +5,7 @@ doctor-schedule-service backends for fetching and updating data.
 
 Before starting, read:
 - [API conventions](.claude/architecture/instructions/api-conventions.md)
+- [Time handling](.claude/architecture/instructions/time-handling.md)
 
 - Add a "View" button to each row in the Doctors table (alongside Edit
   and Delete), linking to /doctors/:id
@@ -15,8 +16,9 @@ Before starting, read:
   hours (e.g. "9:00–17:00") or "Not scheduled"
 - Each day row has an action to add a schedule (if not scheduled) or
   edit/remove it (if already scheduled) with inline editing
-- Client-side validation on the schedule form: start hour 8–19, end
-  hour 9–20, end hour must be after start hour
+- Client-side validation on the schedule form: start hour 0–23, end
+  hour 1–24 (clinic time), end hour must be after start hour, and the
+  window must fit inside one UTC day once converted
 - On failure, display the backend's error details to the user — for
   field-level validation errors, show each message next to its
   matching field; for other failures, show the message generically

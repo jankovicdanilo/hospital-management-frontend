@@ -10,7 +10,7 @@ import type { AppointmentResponseDto, ProcedureAttachFailure } from '../types/ap
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import { STATUS_STYLES } from '../utils/appointmentStatus';
-import { formatDurationParts } from '../utils/appointmentDateTime';
+import { CLINIC_TIME_ZONE, clinicUtcOffsetMinutes, formatDurationParts } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
 import { translateStatus } from '../utils/i18nLabels';
 
@@ -83,7 +83,8 @@ export default function AppointmentDetailPage() {
     setDownloadingInvoice(true);
     setError('');
     try {
-      const blob = await downloadInvoice(appointment.id, invoiceFormat, i18n.language, user!.token);
+      const utcOffsetMinutes = clinicUtcOffsetMinutes(new Date(appointment.dateTime));
+      const blob = await downloadInvoice(appointment.id, invoiceFormat, i18n.language, user!.token, utcOffsetMinutes);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -169,6 +170,7 @@ export default function AppointmentDetailPage() {
                       hour: '2-digit',
                       minute: '2-digit',
                       hour12: false,
+                      timeZone: CLINIC_TIME_ZONE,
                     })}
                   </h1>
                   <Badge color={STATUS_STYLES[appointment.status].badge}>

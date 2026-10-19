@@ -5,14 +5,15 @@ for fetching data.
 
 Before starting, read:
 - [API conventions](.claude/architecture/instructions/api-conventions.md)
+- [Time handling](.claude/architecture/instructions/time-handling.md)
 - [Statistics service contract](.claude/skills/service-lookup/references/statistics-service-contract.md)
 
 - Page at /statistics, added to the main navigation alongside the other
   pages. Read-only — there are no create/edit/delete actions.
 - A date-range filter above all sections: "From" and "To" date inputs
-  shared by every section. Defaults to the last 12 months, computed
-  from today's date in the clinic timezone (see api-conventions.md),
-  not the browser's. Changing either date refetches all four sections.
+  shared by every section, labelled as UTC days. Defaults to the last
+  12 months, counted back from today's UTC date. Changing either date
+  refetches all four sections.
   "To" cannot be before "From" — prevent it in the inputs so
   INVALID_DATE_RANGE is never sent, and don't fire requests while the
   range is invalid.
