@@ -27,9 +27,11 @@ export default function AppointmentDetailPage() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
 
+  const locationState = location.state as { procedureFailures?: ProcedureAttachFailure[]; weekStart?: string } | null;
   const [procedureFailures, setProcedureFailures] = useState<ProcedureAttachFailure[]>(
-    (location.state as { procedureFailures?: ProcedureAttachFailure[] } | null)?.procedureFailures ?? [],
+    locationState?.procedureFailures ?? [],
   );
+  const backState = locationState?.weekStart ? { weekStart: locationState.weekStart } : undefined;
   const [appointment, setAppointment] = useState<AppointmentResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -60,7 +62,7 @@ export default function AppointmentDetailPage() {
     setError('');
     try {
       await deleteAppointment(appointmentId, user!.token);
-      navigate('/appointments', { replace: true });
+      navigate('/appointments', { replace: true, state: backState });
     } catch (err) {
       setError(getErrorMessage(err));
       setDeleting(false);
@@ -112,7 +114,7 @@ export default function AppointmentDetailPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6">
-        <Link to="/appointments" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+        <Link to="/appointments" state={backState} className="text-sm font-medium text-blue-600 hover:text-blue-700">
           ← {t('appointments.backToAppointments')}
         </Link>
       </div>
@@ -209,6 +211,7 @@ export default function AppointmentDetailPage() {
                 {appointment.status === 'Pending' && (
                   <Link
                     to={`/appointments/${appointment.id}/edit`}
+                    state={backState}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     {t('common.edit')}

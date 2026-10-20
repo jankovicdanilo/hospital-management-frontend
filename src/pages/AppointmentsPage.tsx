@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Stethoscope, User, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +21,7 @@ import {
   formatDateIso,
   formatUtcDateIso,
   getMonday,
+  parseDateIso,
   parseDurationToMinutes,
 } from '../utils/appointmentDateTime';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
@@ -138,8 +139,12 @@ function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[]
 export default function AppointmentsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [weekStart, setWeekStart] = useState(() => {
+    const stateWeekStart = (location.state as { weekStart?: string } | null)?.weekStart;
+    return getMonday(stateWeekStart ? parseDateIso(stateWeekStart) : new Date());
+  });
   const [appointments, setAppointments] = useState<AppointmentListResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -304,6 +309,7 @@ export default function AppointmentsPage() {
         </div>
         <Link
           to="/appointments/new"
+          state={{ weekStart: formatDateIso(weekStart) }}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
         >
           {t('appointments.newAppointment')}
@@ -508,11 +514,11 @@ export default function AppointmentsPage() {
                             doctor: appt.doctorName ?? t('common.unknownDoctor'),
                             patient: appt.patientName ?? t('common.unknownPatient'),
                           })}
-                          onClick={() => navigate(`/appointments/${appt.id}`)}
+                          onClick={() => navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } })}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              navigate(`/appointments/${appt.id}`);
+                              navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } });
                             }
                           }}
                           className={`absolute left-1 right-1 overflow-hidden rounded-lg border px-2 py-1 text-xs shadow-sm cursor-pointer hover:brightness-95 transition-[filter] ${styles.bg} ${styles.border} ${styles.text}`}
@@ -573,11 +579,11 @@ export default function AppointmentsPage() {
                         doctor: appt.doctorName ?? t('common.unknownDoctor'),
                         patient: appt.patientName ?? t('common.unknownPatient'),
                       })}
-                      onClick={() => navigate(`/appointments/${appt.id}`)}
+                      onClick={() => navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          navigate(`/appointments/${appt.id}`);
+                          navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } });
                         }
                       }}
                       className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm transition-[filter] hover:brightness-95 ${styles.bg} ${styles.border} ${styles.text}`}

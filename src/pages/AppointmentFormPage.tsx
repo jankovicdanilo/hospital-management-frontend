@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors, getPopularDoctors } from '../api/doctor';
@@ -86,7 +86,10 @@ export default function AppointmentFormPage() {
   const isEdit = Boolean(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const locationWeekStart = (location.state as { weekStart?: string } | null)?.weekStart;
+  const backState = locationWeekStart ? { weekStart: locationWeekStart } : undefined;
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -464,7 +467,7 @@ export default function AppointmentFormPage() {
 
       if (isEdit) {
         await updateAppointment({ id: Number(id), ...payload }, user!.token);
-        navigate('/appointments', { replace: true });
+        navigate('/appointments', { replace: true, state: backState });
         return;
       }
 
@@ -487,7 +490,10 @@ export default function AppointmentFormPage() {
 
       navigate(`/appointments/${created.id}`, {
         replace: true,
-        state: procedureFailures.length > 0 ? { procedureFailures } : undefined,
+        state: {
+          ...(locationWeekStart ? { weekStart: locationWeekStart } : {}),
+          ...(procedureFailures.length > 0 ? { procedureFailures } : {}),
+        },
       });
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
@@ -541,7 +547,7 @@ export default function AppointmentFormPage() {
             <p className="text-sm text-gray-600 mb-4">
               {t('appointmentForm.notEditable')}
             </p>
-            <Link to="/appointments" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+            <Link to="/appointments" state={backState} className="text-sm font-medium text-blue-600 hover:text-blue-700">
               ← {t('appointments.backToAppointments')}
             </Link>
           </div>
@@ -771,6 +777,7 @@ export default function AppointmentFormPage() {
             <div className="flex justify-end gap-3">
               <Link
                 to="/appointments"
+                state={backState}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {t('common.cancel')}
