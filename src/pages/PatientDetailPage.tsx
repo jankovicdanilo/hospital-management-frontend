@@ -14,6 +14,7 @@ import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
 import { formatCurrency } from '../utils/currency';
 import { translateStatus } from '../utils/i18nLabels';
+import { CLINIC_TIME_ZONE } from '../utils/appointmentDateTime';
 
 function formatDateOnly(dateOnly: string): string {
   const [year, month, day] = dateOnly.split('-').map(Number);
@@ -26,6 +27,7 @@ function formatDateOnly(dateOnly: string): string {
 
 function formatDateTime(dateTime: string): string {
   return new Date(dateTime).toLocaleString('en-US', {
+    timeZone: CLINIC_TIME_ZONE,
     year: 'numeric',
     month: 'short',
     day: 'numeric',
