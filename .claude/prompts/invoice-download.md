@@ -4,6 +4,7 @@ Use invoice-service backend for fetching data.
 
 Before starting, read:
 - [API conventions](.claude/architecture/instructions/api-conventions.md)
+- [Time handling](.claude/architecture/instructions/time-handling.md)
 
 - On the appointment detail page (/appointments/:id), add a
   "Download Invoice" action, visible only when the appointment's
@@ -22,6 +23,10 @@ Before starting, read:
   available.
 - A loading state on the button while the download is in progress
   (file generation may take a moment)
+- The appointment time on the downloaded invoice matches the time shown
+  on the appointment page, including for appointments on the other side
+  of a daylight-saving change (see the invoice contract for the request
+  parameter)
 - On failure, display the backend's error details to the user — same
   two-shape convention as everywhere else (this endpoint can fail with
   the standard JSON error shape even though success returns a binary

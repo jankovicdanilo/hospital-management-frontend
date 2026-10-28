@@ -97,36 +97,8 @@ Backend `DateOnly` fields (e.g. dateOfBirth) serialize over JSON as
 ISO date strings, e.g. "1990-05-14" — not full datetime strings, and
 not JS Date objects.
 
-## DateTime fields and timezones
+## Dates, times and timezones
 
-Any full `DateTime` field sent to the backend (e.g. an appointment's
-start time) must be sent as a genuine UTC value — use `date.toISOString()`
-on a real JS `Date` object, never a manually-built local-time string.
-The backend stores `DateTime` columns as UTC and compares against
-`DateTime.UtcNow` for time-based logic (e.g. marking appointments
-Missed) — sending a local, timezone-less string will silently
-double-shift any comparison against a schedule or "now."
-
-Business hours, weekly schedules, and day-of-week are defined in the
-clinic's local time, not UTC. The backend converts UTC values to
-clinic-local time internally before comparing against schedule hours
-or determining which weekday a `DateTime` falls on — the frontend does
-not need to do this conversion itself, only ensure it sends genuine
-UTC in the first place.
-
-When displaying a `DateTime` received from the backend, convert it to
-the user's local time for display (`new Date(isoString)` plus
-`.toLocaleTimeString()`/`.toLocaleDateString()` — this happens
-automatically once the backend returns a proper UTC ISO string).
-
-The clinic's own timezone is `Europe/Podgorica`, matching
-`ClinicSettings.TimeZoneId` on the backend. Any frontend logic that
-needs to reason about clinic-local time explicitly (not just display
-to the current user) — e.g. interpreting a bare time-of-day string
-like a free-slot's `"09:00:00"` as a specific real instant — must use
-this known clinic timezone, not the browser's ambient local timezone.
-Do not assume the browser running the app is in the same timezone as
-the clinic; construct/parse such values using a timezone-aware
-approach (e.g. the `Temporal` API where available, or a small
-timezone-conversion utility) rather than a bare `new Date(...)`, which
-silently uses the browser's local timezone.
+All date and time rules, including time zones, are in
+[time-handling.md](time-handling.md). Read it before touching
+anything that shows, accepts, or filters by a date or time.

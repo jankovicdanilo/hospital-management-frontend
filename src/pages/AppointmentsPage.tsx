@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Stethoscope, User, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,18 @@ import type { AppointmentListResponseDto, AppointmentStatus } from '../types/app
 import type { DoctorResponseDto } from '../types/doctor';
 import type { ProcedureListDto } from '../types/procedure';
 import { APPOINTMENT_STATUSES, STATUS_STYLES } from '../utils/appointmentStatus';
-import { addDays, formatDateIso, getMonday, parseDurationToMinutes } from '../utils/appointmentDateTime';
+import {
+  CLINIC_TIME_ZONE,
+  addDays,
+  clinicLocalDateIso,
+  clinicLocalDayStartUtc,
+  clinicLocalMinutesOfDay,
+  formatDateIso,
+  formatUtcDateIso,
+  getMonday,
+  parseDateIso,
+  parseDurationToMinutes,
+} from '../utils/appointmentDateTime';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
 import { patientToOption } from '../utils/searchableSelectOptions';
@@ -55,7 +66,13 @@ type PositionedItem = PositionedSingle | PositionedGroup;
 function formatTimeRange(appt: AppointmentListResponseDto): string {
   const start = new Date(appt.dateTime);
   const end = new Date(start.getTime() + parseDurationToMinutes(appt.duration) * 60000);
-  const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const fmt = (d: Date) =>
+    d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: CLINIC_TIME_ZONE,
+    });
   return `${fmt(start)}–${fmt(end)}`;
 }
 
@@ -74,7 +91,7 @@ function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[]
   const items = appointments
     .map((appt) => {
       const start = new Date(appt.dateTime);
-      const startMinutes = start.getHours() * 60 + start.getMinutes();
+      const startMinutes = clinicLocalMinutesOfDay(start);
       const endMinutes = startMinutes + parseDurationToMinutes(appt.duration);
       const layoutEndMinutes = Math.max(endMinutes, startMinutes + MIN_BLOCK_MINUTES);
       return { appt, startMinutes, endMinutes, layoutEndMinutes };
@@ -122,8 +139,12 @@ function layoutDay(appointments: AppointmentListResponseDto[]): PositionedItem[]
 export default function AppointmentsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [weekStart, setWeekStart] = useState(() => {
+    const stateWeekStart = (location.state as { weekStart?: string } | null)?.weekStart;
+    return getMonday(stateWeekStart ? parseDateIso(stateWeekStart) : new Date());
+  });
   const [appointments, setAppointments] = useState<AppointmentListResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -189,9 +210,19 @@ export default function AppointmentsPage() {
     setError('');
     try {
       const singleDoctorId = doctorFilterIds.length === 1 ? Number(doctorFilterIds[0]) : undefined;
+
+      // The week is Mon–Fri in clinic-local terms, but the API filters by UTC day, and a
+      // local day can spill into the neighboring UTC day — so the fetched UTC range covers
+      // the full span of UTC instants the local Mon–Fri window overlaps, and appointments are
+      // bucketed into local days client-side afterwards.
+      const weekStartUtc = clinicLocalDayStartUtc(formatDateIso(weekStart));
+      const weekEndUtcExclusive = clinicLocalDayStartUtc(formatDateIso(addDays(weekStart, 5)));
+      const startDate = formatUtcDateIso(weekStartUtc);
+      const endDate = formatUtcDateIso(new Date(weekEndUtcExclusive.getTime() - 1));
+
       const data = await getAppointmentsByWeek(
-        formatDateIso(weekStart),
-        formatDateIso(addDays(weekStart, 4)),
+        startDate,
+        endDate,
         user!.token,
         singleDoctorId,
         patientFilterId ? Number(patientFilterId) : undefined,
@@ -232,7 +263,7 @@ export default function AppointmentsPage() {
   const appointmentsByDay = useMemo(
     () =>
       days.map((day) =>
-        layoutDay(filteredAppointments.filter((a) => formatDateIso(new Date(a.dateTime)) === day.iso)),
+        layoutDay(filteredAppointments.filter((a) => clinicLocalDateIso(new Date(a.dateTime)) === day.iso)),
       ),
     [filteredAppointments, days],
   );
@@ -278,6 +309,7 @@ export default function AppointmentsPage() {
         </div>
         <Link
           to="/appointments/new"
+          state={{ weekStart: formatDateIso(weekStart) }}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
         >
           {t('appointments.newAppointment')}
@@ -482,11 +514,11 @@ export default function AppointmentsPage() {
                             doctor: appt.doctorName ?? t('common.unknownDoctor'),
                             patient: appt.patientName ?? t('common.unknownPatient'),
                           })}
-                          onClick={() => navigate(`/appointments/${appt.id}`)}
+                          onClick={() => navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } })}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              navigate(`/appointments/${appt.id}`);
+                              navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } });
                             }
                           }}
                           className={`absolute left-1 right-1 overflow-hidden rounded-lg border px-2 py-1 text-xs shadow-sm cursor-pointer hover:brightness-95 transition-[filter] ${styles.bg} ${styles.border} ${styles.text}`}
@@ -547,11 +579,11 @@ export default function AppointmentsPage() {
                         doctor: appt.doctorName ?? t('common.unknownDoctor'),
                         patient: appt.patientName ?? t('common.unknownPatient'),
                       })}
-                      onClick={() => navigate(`/appointments/${appt.id}`)}
+                      onClick={() => navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          navigate(`/appointments/${appt.id}`);
+                          navigate(`/appointments/${appt.id}`, { state: { weekStart: formatDateIso(weekStart) } });
                         }
                       }}
                       className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm transition-[filter] hover:brightness-95 ${styles.bg} ${styles.border} ${styles.text}`}

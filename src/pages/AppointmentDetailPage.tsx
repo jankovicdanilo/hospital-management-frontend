@@ -10,7 +10,7 @@ import type { AppointmentResponseDto, ProcedureAttachFailure } from '../types/ap
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
 import { STATUS_STYLES } from '../utils/appointmentStatus';
-import { formatDurationParts } from '../utils/appointmentDateTime';
+import { CLINIC_TIME_ZONE, clinicUtcOffsetMinutes, formatDurationParts } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
 import { translateStatus } from '../utils/i18nLabels';
 
@@ -27,9 +27,11 @@ export default function AppointmentDetailPage() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
 
+  const locationState = location.state as { procedureFailures?: ProcedureAttachFailure[]; weekStart?: string } | null;
   const [procedureFailures, setProcedureFailures] = useState<ProcedureAttachFailure[]>(
-    (location.state as { procedureFailures?: ProcedureAttachFailure[] } | null)?.procedureFailures ?? [],
+    locationState?.procedureFailures ?? [],
   );
+  const backState = locationState?.weekStart ? { weekStart: locationState.weekStart } : undefined;
   const [appointment, setAppointment] = useState<AppointmentResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -60,7 +62,7 @@ export default function AppointmentDetailPage() {
     setError('');
     try {
       await deleteAppointment(appointmentId, user!.token);
-      navigate('/appointments', { replace: true });
+      navigate('/appointments', { replace: true, state: backState });
     } catch (err) {
       setError(getErrorMessage(err));
       setDeleting(false);
@@ -83,7 +85,8 @@ export default function AppointmentDetailPage() {
     setDownloadingInvoice(true);
     setError('');
     try {
-      const blob = await downloadInvoice(appointment.id, invoiceFormat, i18n.language, user!.token);
+      const utcOffsetMinutes = clinicUtcOffsetMinutes(new Date(appointment.dateTime));
+      const blob = await downloadInvoice(appointment.id, invoiceFormat, i18n.language, user!.token, utcOffsetMinutes);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -111,7 +114,7 @@ export default function AppointmentDetailPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6">
-        <Link to="/appointments" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+        <Link to="/appointments" state={backState} className="text-sm font-medium text-blue-600 hover:text-blue-700">
           ← {t('appointments.backToAppointments')}
         </Link>
       </div>
@@ -169,6 +172,7 @@ export default function AppointmentDetailPage() {
                       hour: '2-digit',
                       minute: '2-digit',
                       hour12: false,
+                      timeZone: CLINIC_TIME_ZONE,
                     })}
                   </h1>
                   <Badge color={STATUS_STYLES[appointment.status].badge}>
@@ -207,6 +211,7 @@ export default function AppointmentDetailPage() {
                 {appointment.status === 'Pending' && (
                   <Link
                     to={`/appointments/${appointment.id}/edit`}
+                    state={backState}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     {t('common.edit')}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { getDoctors, getPopularDoctors } from '../api/doctor';
@@ -17,42 +17,29 @@ import {
 import { ApiError, getErrorMessage } from '../api/apiErrors';
 import type { ProcedureListDto } from '../types/procedure';
 import type { TimeSlotDto } from '../types/appointment';
-import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
+import type { DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import DatePicker from '../components/DatePicker';
 import MultiSelectDropdown from '../components/MultiSelectDropdown';
 import SearchableSelect from '../components/SearchableSelect';
 import type { ProcedureAttachFailure } from '../types/appointment';
 import {
   CLINIC_TIME_ZONE,
+  addDays,
+  clinicLocalDateIso,
+  clinicLocalDayStartUtc,
   formatDateIso,
   formatTimeOfDayInZone,
   minutesToDurationString,
+  parseDateIso,
   parseDurationToMinutes,
-  parseSlotTime,
+  scheduleWindowsForLocalDate,
   toApiDateTimeString,
+  utcDaysForLocalDate,
+  workingLocalWeekdays,
 } from '../utils/appointmentDateTime';
 import { formatCurrency } from '../utils/currency';
 import { doctorToOption, patientToOption } from '../utils/searchableSelectOptions';
 import { translateDayOfWeek } from '../utils/i18nLabels';
-
-const JS_DAY_TO_NAME: DayOfWeek[] = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
-const WEEK_ORDER: DayOfWeek[] = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
 
 interface FormState {
   doctorId: string;
@@ -68,32 +55,19 @@ type FormErrors = Partial<
 };
 
 const emptyForm: FormState = { doctorId: '', patientId: '', date: '', notes: '' };
-const todayIso = formatDateIso(new Date());
+const todayIso = clinicLocalDateIso(new Date());
 
-function weekdayOfIsoDate(iso: string): DayOfWeek {
-  const [y, m, d] = iso.split('-').map(Number);
-  return JS_DAY_TO_NAME[new Date(y, m - 1, d).getDay()];
+/** A free (or selected) time interval as real instants, independent of which UTC day it was fetched from. */
+interface SlotInterval {
+  start: Date;
+  end: Date;
 }
 
-// TimeSlotDto entries from getFreeSlots are bare clinic-local "HH:mm:ss" time-of-day
-// strings (parseSlotTime's non-"T" branch), not absolute timestamps. The
-// injected slot for the appointment being edited must use the same
-// representation — otherwise it gets parsed as an absolute UTC instant while
-// every other slot is parsed as clinic-local wall-clock time, and the two can
-// silently disagree once converted to milliseconds via parseSlotTime. Extracting
-// wall-clock components from the Date directly would use the browser's ambient
-// timezone instead, so this goes through the clinic timezone explicitly.
-function toClinicTimeOfDay(date: Date): string {
-  return formatTimeOfDayInZone(date, CLINIC_TIME_ZONE);
-}
+/** Merges a flat list of intervals into contiguous free time ranges. */
+function mergeFreeIntervals(slots: SlotInterval[]): SlotInterval[] {
+  const parsed = [...slots].sort((a, b) => a.start.getTime() - b.start.getTime());
 
-/** Merges a flat list of free slots into contiguous free time ranges. */
-function mergeFreeIntervals(slots: TimeSlotDto[], dateIso: string): { start: Date; end: Date }[] {
-  const parsed = slots
-    .map((s) => ({ start: parseSlotTime(dateIso, s.start), end: parseSlotTime(dateIso, s.end) }))
-    .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-  const merged: { start: Date; end: Date }[] = [];
+  const merged: SlotInterval[] = [];
   for (const slot of parsed) {
     const last = merged[merged.length - 1];
     if (last && slot.start.getTime() <= last.end.getTime()) {
@@ -112,7 +86,10 @@ export default function AppointmentFormPage() {
   const isEdit = Boolean(id);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const locationWeekStart = (location.state as { weekStart?: string } | null)?.weekStart;
+  const backState = locationWeekStart ? { weekStart: locationWeekStart } : undefined;
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -130,16 +107,16 @@ export default function AppointmentFormPage() {
   const [doctorSchedules, setDoctorSchedules] = useState<DoctorScheduleResponseDto[]>([]);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
 
-  const [freeSlots, setFreeSlots] = useState<TimeSlotDto[]>([]);
+  const [freeSlots, setFreeSlots] = useState<SlotInterval[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlotDto | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<SlotInterval | null>(null);
   const [durationHours, setDurationHours] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
 
   const [originalDoctorId, setOriginalDoctorId] = useState<number | null>(null);
   const [originalDate, setOriginalDate] = useState<string | null>(null);
-  const [originalSlot, setOriginalSlot] = useState<TimeSlotDto | null>(null);
+  const [originalSlot, setOriginalSlot] = useState<SlotInterval | null>(null);
 
   const loading = loadingOptions || loadingAppointment;
 
@@ -195,8 +172,8 @@ export default function AppointmentFormPage() {
         const start = new Date(appt.dateTime);
         const apptDurationMinutes = Math.round(parseDurationToMinutes(appt.duration));
         const end = new Date(start.getTime() + apptDurationMinutes * 60000);
-        const slot: TimeSlotDto = { start: toClinicTimeOfDay(start), end: toClinicTimeOfDay(end) };
-        const dateIso = formatDateIso(start);
+        const slot: SlotInterval = { start, end };
+        const dateIso = clinicLocalDateIso(start);
 
         setForm({
           doctorId: appt.doctor ? String(appt.doctor.id) : '',
@@ -285,37 +262,50 @@ export default function AppointmentFormPage() {
     let cancelled = false;
     setLoadingSlots(true);
 
-    getFreeSlots(Number(form.doctorId), form.date, user!.token)
-      .then((slots) => {
+    const localStart = clinicLocalDayStartUtc(form.date);
+    const localEnd = clinicLocalDayStartUtc(formatDateIso(addDays(parseDateIso(form.date), 1)));
+
+    // A clinic-local day can straddle two UTC days, so free slots for it may come from
+    // either. A UTC day with no schedule for that weekday throws a business-rule error
+    // (see appointment-service-contract.md) rather than returning an empty array — that's
+    // expected for the sliver UTC day and shouldn't fail the whole lookup, so it's treated
+    // as "no slots from that day" rather than an error.
+    Promise.all(
+      utcDaysForLocalDate(form.date).map((utcDateIso) =>
+        getFreeSlots(Number(form.doctorId), utcDateIso, user!.token).catch((err) => {
+          if (err instanceof ApiError) {
+            return [] as TimeSlotDto[];
+          }
+          throw err;
+        }),
+      ),
+    )
+      .then((results) => {
         if (cancelled) {
           return;
         }
 
-        let merged = slots;
+        const slots = results
+          .flat()
+          .map((s) => ({
+            start: new Date(Math.max(new Date(s.start).getTime(), localStart.getTime())),
+            end: new Date(Math.min(new Date(s.end).getTime(), localEnd.getTime())),
+          }))
+          .filter((s) => s.start.getTime() < s.end.getTime());
+
+        let merged = mergeFreeIntervals(slots);
         if (
           originalSlot &&
           Number(form.doctorId) === originalDoctorId &&
           form.date === originalDate &&
-          !slots.some(
-            (s) =>
-              parseSlotTime(form.date, s.start).getTime() ===
-              parseSlotTime(form.date, originalSlot.start).getTime(),
-          )
+          !merged.some((s) => s.start.getTime() === originalSlot.start.getTime())
         ) {
-          merged = [...slots, originalSlot].sort(
-            (a, b) =>
-              parseSlotTime(form.date, a.start).getTime() - parseSlotTime(form.date, b.start).getTime(),
-          );
+          merged = mergeFreeIntervals([...merged, originalSlot]);
         }
 
         setFreeSlots(merged);
         setSelectedSlot((prev) =>
-          prev &&
-          merged.some(
-            (s) => parseSlotTime(form.date, s.start).getTime() === parseSlotTime(form.date, prev.start).getTime(),
-          )
-            ? prev
-            : null,
+          prev && merged.some((s) => s.start.getTime() === prev.start.getTime()) ? prev : null,
         );
       })
       .catch((err) => {
@@ -368,33 +358,33 @@ export default function AppointmentFormPage() {
     setSelectedSlot(null);
   }
 
-  function handleSlotSelect(slot: TimeSlotDto) {
+  function handleSlotSelect(slot: SlotInterval) {
     setSelectedSlot(slot);
-    const start = parseSlotTime(form.date, slot.start);
-    const end = parseSlotTime(form.date, slot.end);
-    const totalMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+    const totalMinutes = Math.round((slot.end.getTime() - slot.start.getTime()) / 60000);
     setDurationHours(String(Math.floor(totalMinutes / 60)));
     setDurationMinutes(String(totalMinutes % 60));
     setFieldErrors((prev) => ({ ...prev, slot: undefined, duration: undefined }));
   }
 
-  const workingDays = new Set(doctorSchedules.map((s) => s.dayOfWeek));
-  const workingDaysLabel = WEEK_ORDER.filter((d) => workingDays.has(d))
+  const workingDaysLabel = workingLocalWeekdays(doctorSchedules)
     .map((d) => translateDayOfWeek(t, d))
     .join(', ');
 
   function isNonWorkingDay(date: Date): boolean {
-    return !workingDays.has(JS_DAY_TO_NAME[date.getDay()]);
+    return scheduleWindowsForLocalDate(doctorSchedules, formatDateIso(date)).length === 0;
   }
 
   const customDurationMinutes = (Number(durationHours) || 0) * 60 + (Number(durationMinutes) || 0);
-  const selectedDaySchedule = form.date
-    ? doctorSchedules.find((s) => s.dayOfWeek === weekdayOfIsoDate(form.date))
-    : undefined;
+  const selectedDateWindows = form.date ? scheduleWindowsForLocalDate(doctorSchedules, form.date) : [];
+  const activeScheduleWindow = selectedSlot
+    ? selectedDateWindows.find(
+        (w) => w.start.getTime() <= selectedSlot.start.getTime() && selectedSlot.start.getTime() < w.end.getTime(),
+      )
+    : selectedDateWindows[0];
   const durationEndLabel =
     selectedSlot && customDurationMinutes > 0
       ? formatTimeOfDayInZone(
-          new Date(parseSlotTime(form.date, selectedSlot.start).getTime() + customDurationMinutes * 60000),
+          new Date(selectedSlot.start.getTime() + customDurationMinutes * 60000),
           CLINIC_TIME_ZONE,
         ).slice(0, 5)
       : null;
@@ -415,7 +405,7 @@ export default function AppointmentFormPage() {
     if (!selectedSlot) {
       errors.slot = t('appointmentForm.slotRequired');
     } else {
-      const start = parseSlotTime(form.date, selectedSlot.start);
+      const start = selectedSlot.start;
 
       if (start.getTime() <= Date.now()) {
         errors.slot = t('appointmentForm.slotInFuture');
@@ -427,19 +417,15 @@ export default function AppointmentFormPage() {
         errors.duration = t('appointmentForm.durationMax');
       } else {
         const end = new Date(start.getTime() + customDurationMinutes * 60000);
-        const daySchedule = doctorSchedules.find((s) => s.dayOfWeek === weekdayOfIsoDate(form.date));
 
-        if (daySchedule) {
-          const scheduleEnd = parseSlotTime(form.date, `${String(daySchedule.endHour).padStart(2, '0')}:00:00`);
-
-          if (end.getTime() > scheduleEnd.getTime()) {
-            errors.duration = t('appointmentForm.durationExceedsSchedule', { hour: daySchedule.endHour });
-          }
+        if (activeScheduleWindow && end.getTime() > activeScheduleWindow.end.getTime()) {
+          errors.duration = t('appointmentForm.durationExceedsSchedule', {
+            time: formatTimeOfDayInZone(activeScheduleWindow.end, CLINIC_TIME_ZONE).slice(0, 5),
+          });
         }
 
         if (!errors.duration) {
-          const merged = mergeFreeIntervals(freeSlots, form.date);
-          const fits = merged.some(
+          const fits = freeSlots.some(
             (iv) => iv.start.getTime() <= start.getTime() && end.getTime() <= iv.end.getTime(),
           );
           if (!fits) {
@@ -469,7 +455,7 @@ export default function AppointmentFormPage() {
     setSaving(true);
 
     try {
-      const start = parseSlotTime(form.date, selectedSlot!.start);
+      const start = selectedSlot!.start;
 
       const payload = {
         patientId: Number(form.patientId),
@@ -481,7 +467,7 @@ export default function AppointmentFormPage() {
 
       if (isEdit) {
         await updateAppointment({ id: Number(id), ...payload }, user!.token);
-        navigate('/appointments', { replace: true });
+        navigate('/appointments', { replace: true, state: backState });
         return;
       }
 
@@ -504,7 +490,10 @@ export default function AppointmentFormPage() {
 
       navigate(`/appointments/${created.id}`, {
         replace: true,
-        state: procedureFailures.length > 0 ? { procedureFailures } : undefined,
+        state: {
+          ...(locationWeekStart ? { weekStart: locationWeekStart } : {}),
+          ...(procedureFailures.length > 0 ? { procedureFailures } : {}),
+        },
       });
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
@@ -558,7 +547,7 @@ export default function AppointmentFormPage() {
             <p className="text-sm text-gray-600 mb-4">
               {t('appointmentForm.notEditable')}
             </p>
-            <Link to="/appointments" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+            <Link to="/appointments" state={backState} className="text-sm font-medium text-blue-600 hover:text-blue-700">
               ← {t('appointments.backToAppointments')}
             </Link>
           </div>
@@ -614,7 +603,7 @@ export default function AppointmentFormPage() {
                   form.doctorId &&
                   !loadingSchedule && (
                     <p className="mt-1 text-xs text-gray-500">
-                      {workingDays.size > 0
+                      {doctorSchedules.length > 0
                         ? t('appointmentForm.worksLabel', { days: workingDaysLabel })
                         : t('appointmentForm.noWeeklySchedule')}
                     </p>
@@ -664,11 +653,8 @@ export default function AppointmentFormPage() {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {freeSlots.map((slot) => {
-                    const start = parseSlotTime(form.date, slot.start);
-                    const end = parseSlotTime(form.date, slot.end);
-                    const isSelected =
-                      selectedSlot != null &&
-                      parseSlotTime(form.date, selectedSlot.start).getTime() === start.getTime();
+                    const { start, end } = slot;
+                    const isSelected = selectedSlot != null && selectedSlot.start.getTime() === start.getTime();
                     const label = `${formatTimeOfDayInZone(start, CLINIC_TIME_ZONE).slice(0, 5)}–${formatTimeOfDayInZone(end, CLINIC_TIME_ZONE).slice(0, 5)}`;
 
                     return (
@@ -737,9 +723,11 @@ export default function AppointmentFormPage() {
               {fieldErrors.duration ? (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.duration}</p>
               ) : (
-                selectedDaySchedule && (
+                activeScheduleWindow && (
                   <p className="mt-1 text-xs text-gray-500">
-                    {t('appointmentForm.scheduledUntil', { hour: selectedDaySchedule.endHour })}
+                    {t('appointmentForm.scheduledUntil', {
+                      time: formatTimeOfDayInZone(activeScheduleWindow.end, CLINIC_TIME_ZONE).slice(0, 5),
+                    })}
                   </p>
                 )
               )}
@@ -789,6 +777,7 @@ export default function AppointmentFormPage() {
             <div className="flex justify-end gap-3">
               <Link
                 to="/appointments"
+                state={backState}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {t('common.cancel')}
