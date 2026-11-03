@@ -11,6 +11,7 @@ import {
   updateDoctorSchedule,
 } from '../api/doctorSchedule';
 import { ApiError, getErrorMessage } from '../api/apiErrors';
+import { permissions } from '../auth/permissions';
 import type { DoctorResponseDto } from '../types/doctor';
 import type { DayOfWeek, DoctorScheduleResponseDto } from '../types/doctorSchedule';
 import Avatar from '../components/Avatar';
@@ -46,6 +47,7 @@ export default function DoctorDetailPage() {
   const doctorId = Number(id);
   const { user } = useAuth();
   const { t } = useTranslation();
+  const canManage = permissions.canManageCatalog(user!.role);
 
   const [doctor, setDoctor] = useState<DoctorResponseDto | null>(null);
   const [schedules, setSchedules] = useState<DoctorScheduleResponseDto[]>([]);
@@ -291,7 +293,7 @@ export default function DoctorDetailPage() {
                           ))}
                       </div>
 
-                      {!isEditing && (
+                      {!isEditing && canManage && (
                         <div className="flex gap-2 shrink-0">
                           {schedule ? (
                             <>

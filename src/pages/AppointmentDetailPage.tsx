@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { deleteAppointment, getAppointmentById } from '../api/appointment';
 import { downloadInvoice, type InvoiceFormat } from '../api/invoice';
 import { getErrorMessage } from '../api/apiErrors';
+import { permissions } from '../auth/permissions';
 import type { AppointmentResponseDto, ProcedureAttachFailure } from '../types/appointment';
 import Avatar from '../components/Avatar';
 import Badge from '../components/Badge';
@@ -39,6 +40,7 @@ export default function AppointmentDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [invoiceFormat, setInvoiceFormat] = useState<InvoiceFormat>('pdf');
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const canViewInvoices = permissions.canViewInvoices(user!.role);
 
   const loadAppointment = useCallback(async () => {
     setLoading(true);
@@ -185,7 +187,7 @@ export default function AppointmentDetailPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-3">
-                {appointment.status === 'Completed' && (
+                {appointment.status === 'Completed' && canViewInvoices && (
                   <div className="flex items-center gap-2">
                     <select
                       value={invoiceFormat}

@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { deletePatient, getPatients } from '../api/patient';
 import { getErrorMessage } from '../api/apiErrors';
+import { permissions } from '../auth/permissions';
 import type { PatientListDto } from '../types/patient';
 import DataTable from '../components/DataTable';
 import Avatar from '../components/Avatar';
@@ -23,6 +24,8 @@ function formatDate(dateOnly: string): string {
 export default function PatientsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const canViewHistory =
+    permissions.canViewPatientHistory(user!.role) && (user!.role !== 'Doctor' || user!.doctorId != null);
   const [patients, setPatients] = useState<PatientListDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -142,9 +145,11 @@ export default function PatientsPage() {
           emptyMessage={t('patients.noPatientsFound')}
           actions={(p) => (
               <>
-                <Link to={`/patients/${p.id}/history`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                  {t('patients.history')}
-                </Link>
+                {canViewHistory && (
+                  <Link to={`/patients/${p.id}/history`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                    {t('patients.history')}
+                  </Link>
+                )}
                 <Link to={`/patients/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                   {t('common.edit')}
                 </Link>

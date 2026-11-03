@@ -10,9 +10,23 @@ All backend failures follow one of two shapes:
 ### Business-rule / not-found errors
 
 Status code indicates the category (404 not found, 409 conflict,
-401 unauthorized, 400 validation, 502 upstream failure). Body:
+401 unauthorized, 403 forbidden, 400 validation, 502 upstream failure). Body:
 
 { "message": string, "errorCode": string }
+
+### Forbidden errors (403)
+
+The user is logged in but not allowed. The body is the same as for other errors:
+`{ "message": string, "errorCode": string }`. Show the message and keep the user logged in.
+
+| Code                   | Source                                                         |
+|------------------------|----------------------------------------------------------------|
+| `FORBIDDEN`            | Role policy, or a role that is not allowed to use appointments |
+| `NOT_YOUR_APPOINTMENT` | A doctor touched another doctor's appointment                  |
+| `NOT_YOUR_PATIENT`     | A doctor asked for a patient who is not his                    |
+| `DOCTOR_NOT_LINKED`    | Doctor account without `doctorId`                              |
+
+A 401 still means not logged in, expired, or revoked. See [Roles and permissions](roles-and-permissions.md).
 
 ### Field-level validation errors (FluentValidation, always 400)
 
@@ -58,24 +72,40 @@ errors?: Record<string, string[]>;
 }
 
 export class ApiError extends Error {
+readonly status: number;
 readonly errorCode: string;
 readonly errors?: Record<string, string[]>;
 
-constructor(message: string, errorCode: string, errors?: Record<string, string[]>) {
+constructor(message: string, errorCode: string, status: number, errors?: Record<string, string[]>) {
 super(message);
 this.name = 'ApiError';
+this.status = status;
 this.errorCode = errorCode;
 this.errors = errors;
 }
 }
 
+// Set by AuthProvider so a 401 (expired/revoked token) logs the user out
+// from wherever the failing request happened, without every call site
+// needing to check for it — see Roles and permissions for the 401 vs 403
+// distinction this exists to support.
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+unauthorizedHandler = handler;
+}
+
 export async function throwApiError(response: Response): Promise<never> {
 const text = await response.text();
+
+if (response.status === 401) {
+unauthorizedHandler?.();
+}
 
 if (text) {
 try {
 const body: ApiErrorResponse = JSON.parse(text);
-throw new ApiError(body.message, body.errorCode, body.errors);
+throw new ApiError(body.message, body.errorCode, response.status, body.errors);
 } catch (err) {
 if (err instanceof ApiError) {
 throw err;
@@ -84,7 +114,7 @@ throw err;
 }
 }
 
-throw new ApiError(`Request failed with status ${response.status}.`, 'UNKNOWN_ERROR');
+throw new ApiError(`Request failed with status ${response.status}.`, 'UNKNOWN_ERROR', response.status);
 }
 
 export function authHeaders(token: string): HeadersInit {

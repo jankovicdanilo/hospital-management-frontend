@@ -4,6 +4,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { deleteProcedure, getProcedures } from '../api/procedure';
 import { getErrorMessage } from '../api/apiErrors';
+import { permissions } from '../auth/permissions';
 import type { ProcedureListDto } from '../types/procedure';
 import DataTable from '../components/DataTable';
 import Badge from '../components/Badge';
@@ -23,6 +24,7 @@ function priceTier(price: number): { key: 'tierStandard' | 'tierElevated' | 'tie
 export default function ProceduresPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const canManage = permissions.canManageCatalog(user!.role);
   const [procedures, setProcedures] = useState<ProcedureListDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,12 +77,14 @@ export default function ProceduresPage() {
           <h1 className="text-2xl font-semibold text-gray-800">{t('procedures.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('procedures.subtitle')}</p>
         </div>
-        <Link
-          to="/procedures/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          {t('procedures.addProcedure')}
-        </Link>
+        {canManage && (
+          <Link
+            to="/procedures/new"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            {t('procedures.addProcedure')}
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -121,16 +125,20 @@ export default function ProceduresPage() {
           rowKey={(p) => p.id}
           loading={loading}
           emptyMessage={t('procedures.noProceduresFound')}
-          actions={(p) => (
-              <>
-                <Link to={`/procedures/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                  {t('common.edit')}
-                </Link>
-                <button type="button" onClick={() => setPendingDelete(p)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
-                  {t('common.delete')}
-                </button>
-              </>
-          )}
+          actions={
+            canManage
+              ? (p) => (
+                  <>
+                    <Link to={`/procedures/${p.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                      {t('common.edit')}
+                    </Link>
+                    <button type="button" onClick={() => setPendingDelete(p)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                      {t('common.delete')}
+                    </button>
+                  </>
+                )
+              : undefined
+          }
           pagination={{
             pageNumber,
             pageSize,

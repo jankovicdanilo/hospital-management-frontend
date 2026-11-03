@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import PatientsPage from './pages/PatientsPage';
 import PatientFormPage from './pages/PatientFormPage';
 import AuthLayout from './components/AuthLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 import DoctorsPage from './pages/DoctorsPage';
 import DoctorFormPage from './pages/DoctorFormPage';
 import DoctorDetailPage from './pages/DoctorDetailPage';
@@ -28,20 +29,97 @@ function App() {
             <Route path="/patients" element={<PatientsPage />} />
             <Route path="/patients/new" element={<PatientFormPage />} />
             <Route path="/patients/:id/edit" element={<PatientFormPage />} />
-            <Route path="/patients/:id/history" element={<PatientDetailPage />} />
+            <Route
+              path="/patients/:id/history"
+              element={
+                <ProtectedRoute allow={['Admin', 'Doctor']} requireDoctorLink>
+                  <PatientDetailPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/doctors" element={<DoctorsPage />} />
-            <Route path="/doctors/new" element={<DoctorFormPage />} />
+            <Route
+              path="/doctors/new"
+              element={
+                <ProtectedRoute allow={['Admin', 'Manager']}>
+                  <DoctorFormPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/doctors/:id" element={<DoctorDetailPage />} />
-            <Route path="/doctors/:id/edit" element={<DoctorFormPage />} />
+            <Route
+              path="/doctors/:id/edit"
+              element={
+                <ProtectedRoute allow={['Admin', 'Manager']}>
+                  <DoctorFormPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/procedures" element={<ProceduresPage />} />
-            <Route path="/procedures/new" element={<ProcedureFormPage />} />
-            <Route path="/procedures/:id/edit" element={<ProcedureFormPage />} />
-            <Route path="/appointments" element={<AppointmentsPage />} />
-            <Route path="/appointments/new" element={<AppointmentFormPage />} />
-            <Route path="/appointments/:id" element={<AppointmentDetailPage />} />
-            <Route path="/appointments/:id/edit" element={<AppointmentFormPage />} />
-            <Route path="/statistics" element={<StatisticsPage />} />
-            <Route path="/statistics/doctors/:doctorId" element={<DoctorStatisticsDetailPage />} />
+            <Route
+              path="/procedures/new"
+              element={
+                <ProtectedRoute allow={['Admin', 'Manager']}>
+                  <ProcedureFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/procedures/:id/edit"
+              element={
+                <ProtectedRoute allow={['Admin', 'Manager']}>
+                  <ProcedureFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute allow={['Admin', 'Doctor']} requireDoctorLink>
+                  <AppointmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments/new"
+              element={
+                <ProtectedRoute allow={['Admin', 'Doctor']} requireDoctorLink>
+                  <AppointmentFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments/:id"
+              element={
+                <ProtectedRoute allow={['Admin', 'Doctor']} requireDoctorLink>
+                  <AppointmentDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments/:id/edit"
+              element={
+                <ProtectedRoute allow={['Admin', 'Doctor']} requireDoctorLink>
+                  <AppointmentFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/statistics"
+              element={
+                <ProtectedRoute allow={['Admin', 'Manager']}>
+                  <StatisticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/statistics/doctors/:doctorId"
+              element={
+                <ProtectedRoute allow={['Admin', 'Manager']}>
+                  <DoctorStatisticsDetailPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

@@ -2,6 +2,7 @@ import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { setLanguage, type Language } from '../i18n';
+import { permissions } from '../auth/permissions';
 
 export default function AuthLayout() {
   const { user, logout } = useAuth();
@@ -64,26 +65,30 @@ export default function AuthLayout() {
                 >
                     {t('nav.procedures')}
                 </NavLink>
-                <NavLink
-                    to="/appointments"
-                    className={({ isActive }) =>
-                        `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`
-                    }
-                >
-                    {t('nav.appointments')}
-                </NavLink>
-                <NavLink
-                    to="/statistics"
-                    className={({ isActive }) =>
-                        `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                            isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`
-                    }
-                >
-                    {t('nav.statistics')}
-                </NavLink>
+                {permissions.canUseAppointments(user.role) && (
+                    <NavLink
+                        to="/appointments"
+                        className={({ isActive }) =>
+                            `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                        }
+                    >
+                        {t('nav.appointments')}
+                    </NavLink>
+                )}
+                {permissions.canViewStatistics(user.role) && (
+                    <NavLink
+                        to="/statistics"
+                        className={({ isActive }) =>
+                            `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                        }
+                    >
+                        {t('nav.statistics')}
+                    </NavLink>
+                )}
             </nav>
           </div>
           <div className="flex items-center gap-4 shrink-0">

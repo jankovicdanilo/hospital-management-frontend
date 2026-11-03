@@ -48,6 +48,15 @@
     "unexpectedError": "Došlo je do neočekivane greške.",
     "retry": "Ponovi"
   },
+  "noPermission": {
+    "title": "Nemate pristup",
+    "message": "Vaša uloga nema pristup ovoj stranici.",
+    "backToDashboard": "Nazad na kontrolnu tablu"
+  },
+  "doctorNotLinked": {
+    "title": "Nalog nije povezan sa ljekarom",
+    "message": "Vaš nalog nije povezan sa evidencijom ljekara, tako da termini nisu dostupni. Zamolite administratora da poveže vaš nalog."
+  },
   "nav": {
     "appName": "Upravljanje bolnicom",
     "dashboard": "Kontrolna tabla",
@@ -241,6 +250,7 @@
     "worksLabel": "Radi: {{days}}",
     "noWeeklySchedule": "Nema evidentiranog nedjeljnog rasporeda za ovog ljekara.",
     "searchDoctor": "Pretražite ljekara…",
+    "doctorFixedToYou": "Vi (zakazujete za sebe)",
     "searchPatient": "Pretražite pacijenta…",
     "startTime": "Vrijeme početka",
     "selectDoctorAndDate": "Izaberite ljekara i datum da vidite dostupne termine.",
