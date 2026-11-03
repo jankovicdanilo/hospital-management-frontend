@@ -45,6 +45,8 @@ The login response returns `role` and `doctorId`, and the app keeps them with th
 - The appointment list always contains only his appointments, whatever filter the client sends.
 - He can create or edit an appointment only with himself as the doctor, and ask for free slots only for himself. The
   doctor choice is therefore fixed to him.
+- Asking for the appointments of a patient who is not his is refused with `NOT_YOUR_PATIENT`. 
+  The history page therefore shows the error and no empty list.
 
 ## Errors
 

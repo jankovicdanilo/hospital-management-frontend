@@ -14,3 +14,5 @@ Before starting, read:
 - Every 403 shows the message from the response and keeps the user logged in; a 401 still sends them to login
 - A doctor account without a linked doctor record gets a clear message instead of an empty or broken app
 - Statistics and invoices stay available to Admin and Manager only
+- When a patient's appointment history is refused or fails to load, only the error message is shown, 
+  not the empty-state text; the patient's details still show
