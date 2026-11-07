@@ -1,7 +1,10 @@
+export type Role = 'Admin' | 'Manager' | 'Doctor';
+
 export interface User {
   username: string;
   email: string;
-  role: string;
+  role: Role;
+  doctorId: number | null;
   token: string;
 }
 

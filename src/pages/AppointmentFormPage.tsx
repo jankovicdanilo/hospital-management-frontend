@@ -119,6 +119,15 @@ export default function AppointmentFormPage() {
   const [originalSlot, setOriginalSlot] = useState<SlotInterval | null>(null);
 
   const loading = loadingOptions || loadingAppointment;
+  const isDoctorRole = user!.role === 'Doctor';
+
+  // A doctor can only ever book himself, so the doctor choice is fixed instead of
+  // offering a picker — see roles-and-permissions.md "What 'own' means for a doctor".
+  useEffect(() => {
+    if (isDoctorRole && !isEdit) {
+      setForm((prev) => ({ ...prev, doctorId: String(user!.doctorId) }));
+    }
+  }, [isDoctorRole, isEdit, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -558,22 +567,35 @@ export default function AppointmentFormPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="doctorId">
                   {t('common.doctor')}
                 </label>
-                <SearchableSelect
-                  id="doctorId"
-                  value={form.doctorId ? Number(form.doctorId) : null}
-                  onChange={(value) => handleDoctorChange(value == null ? '' : String(value))}
-                  fetchOptions={(search) =>
-                    getDoctors(1, 100, user!.token, search).then((data) => data.items.map(doctorToOption))
-                  }
-                  fetchPopularOptions={() =>
-                    getPopularDoctors(5, user!.token).then((doctors) => doctors.map(doctorToOption))
-                  }
-                  placeholder={t('appointmentForm.searchDoctor')}
-                  initialLabel={initialDoctorLabel}
-                  hasError={Boolean(fieldErrors.doctorId)}
-                />
-                {fieldErrors.doctorId && (
-                  <p className="mt-1 text-xs text-red-600">{fieldErrors.doctorId}</p>
+                {isDoctorRole ? (
+                  <>
+                    <div className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                      {t('appointmentForm.doctorFixedToYou')}
+                    </div>
+                    {fieldErrors.doctorId && (
+                      <p className="mt-1 text-xs text-red-600">{fieldErrors.doctorId}</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <SearchableSelect
+                      id="doctorId"
+                      value={form.doctorId ? Number(form.doctorId) : null}
+                      onChange={(value) => handleDoctorChange(value == null ? '' : String(value))}
+                      fetchOptions={(search) =>
+                        getDoctors(1, 100, user!.token, search).then((data) => data.items.map(doctorToOption))
+                      }
+                      fetchPopularOptions={() =>
+                        getPopularDoctors(5, user!.token).then((doctors) => doctors.map(doctorToOption))
+                      }
+                      placeholder={t('appointmentForm.searchDoctor')}
+                      initialLabel={initialDoctorLabel}
+                      hasError={Boolean(fieldErrors.doctorId)}
+                    />
+                    {fieldErrors.doctorId && (
+                      <p className="mt-1 text-xs text-red-600">{fieldErrors.doctorId}</p>
+                    )}
+                  </>
                 )}
               </div>
 

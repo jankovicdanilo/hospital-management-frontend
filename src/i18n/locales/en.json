@@ -48,6 +48,15 @@
     "unexpectedError": "An unexpected error occurred.",
     "retry": "Retry"
   },
+  "noPermission": {
+    "title": "No access",
+    "message": "Your role doesn't have access to this page.",
+    "backToDashboard": "Back to Dashboard"
+  },
+  "doctorNotLinked": {
+    "title": "Account not linked to a doctor",
+    "message": "Your account isn't linked to a doctor record, so appointments aren't available. Ask an administrator to link your account."
+  },
   "nav": {
     "appName": "Hospital Management",
     "dashboard": "Dashboard",
@@ -241,6 +250,7 @@
     "worksLabel": "Works: {{days}}",
     "noWeeklySchedule": "No weekly schedule on file for this doctor.",
     "searchDoctor": "Search for a doctor…",
+    "doctorFixedToYou": "You (booking as yourself)",
     "searchPatient": "Search for a patient…",
     "startTime": "Start Time",
     "selectDoctorAndDate": "Select a doctor and date to see available slots.",

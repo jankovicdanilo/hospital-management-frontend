@@ -52,6 +52,7 @@ export default function PatientDetailPage() {
 
   const [appointments, setAppointments] = useState<AppointmentListResponseDto[]>([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
+  const [appointmentsError, setAppointmentsError] = useState('');
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -79,12 +80,15 @@ export default function PatientDetailPage() {
 
   const loadAppointments = useCallback(async () => {
     setAppointmentsLoading(true);
+    setAppointmentsError('');
     try {
       const data = await getAppointmentsByPatient(patientId, pageNumber, APPOINTMENTS_PAGE_SIZE, user!.token);
       setAppointments(data.items);
       setTotalCount(data.totalCount);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setAppointmentsError(getErrorMessage(err));
+      setAppointments([]);
+      setTotalCount(0);
     } finally {
       setAppointmentsLoading(false);
     }
@@ -219,28 +223,34 @@ export default function PatientDetailPage() {
             </div>
           </div>
 
-          <DataTable
-            columns={[
-              { header: t('patientDetail.columnDateTime'), render: (a) => formatDateTime(a.dateTime) },
-              { header: t('common.doctor'), render: (a) => a.doctorName ?? t('common.unknownDoctor') },
-              {
-                header: t('common.status'),
-                render: (a) => <Badge color={STATUS_STYLES[a.status].badge}>{translateStatus(t, a.status)}</Badge>,
-              },
-              { header: t('patientDetail.columnTotalCost'), render: (a) => formatCurrency(a.totalCost) },
-            ]}
-            rows={displayedAppointments}
-            rowKey={(a) => a.id}
-            loading={appointmentsLoading}
-            emptyMessage={t('patientDetail.noAppointmentsFound')}
-            onRowClick={(a) => navigate(`/appointments/${a.id}`)}
-            pagination={{
-              pageNumber,
-              pageSize: APPOINTMENTS_PAGE_SIZE,
-              totalCount,
-              onPageChange: setPageNumber,
-            }}
-          />
+          {appointmentsError ? (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {appointmentsError}
+            </div>
+          ) : (
+            <DataTable
+              columns={[
+                { header: t('patientDetail.columnDateTime'), render: (a) => formatDateTime(a.dateTime) },
+                { header: t('common.doctor'), render: (a) => a.doctorName ?? t('common.unknownDoctor') },
+                {
+                  header: t('common.status'),
+                  render: (a) => <Badge color={STATUS_STYLES[a.status].badge}>{translateStatus(t, a.status)}</Badge>,
+                },
+                { header: t('patientDetail.columnTotalCost'), render: (a) => formatCurrency(a.totalCost) },
+              ]}
+              rows={displayedAppointments}
+              rowKey={(a) => a.id}
+              loading={appointmentsLoading}
+              emptyMessage={t('patientDetail.noAppointmentsFound')}
+              onRowClick={(a) => navigate(`/appointments/${a.id}`)}
+              pagination={{
+                pageNumber,
+                pageSize: APPOINTMENTS_PAGE_SIZE,
+                totalCount,
+                onPageChange: setPageNumber,
+              }}
+            />
+          )}
         </>
       )}
     </div>

@@ -166,10 +166,18 @@ export default function AppointmentsPage() {
     return translateStatus(t, status);
   }
 
+  const isDoctorRole = user!.role === 'Doctor';
+
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getDoctors(1, 100, user!.token), getProcedures(1, 100, user!.token)])
+    // A doctor's appointment list is always just his own, so the doctor filter
+    // (and the lookup backing it) is irrelevant and skipped for that role.
+    const doctorsPromise = isDoctorRole
+      ? Promise.resolve({ items: [] as DoctorResponseDto[] })
+      : getDoctors(1, 100, user!.token);
+
+    Promise.all([doctorsPromise, getProcedures(1, 100, user!.token)])
       .then(([doctorData, procedureData]) => {
         if (!cancelled) {
           setDoctors(doctorData.items);
@@ -183,7 +191,7 @@ export default function AppointmentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, isDoctorRole]);
 
   const days = useMemo(
     () =>
@@ -349,18 +357,20 @@ export default function AppointmentsPage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label htmlFor="doctorFilter" className="text-sm font-medium text-gray-600">
-                {t('common.doctor')}
-              </label>
-              <MultiSelectDropdown
-                id="doctorFilter"
-                options={doctors.map((d) => ({ value: String(d.id), label: `${d.firstName} ${d.lastName}` }))}
-                selected={doctorFilterIds}
-                onChange={setDoctorFilterIds}
-                placeholder={t('appointments.allDoctors')}
-              />
-            </div>
+            {!isDoctorRole && (
+              <div className="flex items-center gap-2">
+                <label htmlFor="doctorFilter" className="text-sm font-medium text-gray-600">
+                  {t('common.doctor')}
+                </label>
+                <MultiSelectDropdown
+                  id="doctorFilter"
+                  options={doctors.map((d) => ({ value: String(d.id), label: `${d.firstName} ${d.lastName}` }))}
+                  selected={doctorFilterIds}
+                  onChange={setDoctorFilterIds}
+                  placeholder={t('appointments.allDoctors')}
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <label htmlFor="patientFilter" className="text-sm font-medium text-gray-600">

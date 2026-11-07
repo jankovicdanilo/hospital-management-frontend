@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { deleteDoctor, getDoctors } from '../api/doctor';
 import { getErrorMessage } from '../api/apiErrors';
+import { permissions } from '../auth/permissions';
 import type { DoctorResponseDto } from '../types/doctor';
 import DataTable from '../components/DataTable';
 import Avatar from '../components/Avatar';
@@ -15,6 +16,7 @@ import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 export default function DoctorsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const canManage = permissions.canManageCatalog(user!.role);
   const [doctors, setDoctors] = useState<DoctorResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -70,12 +72,14 @@ export default function DoctorsPage() {
           <h1 className="text-2xl font-semibold text-gray-800">{t('doctors.title')}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('doctors.subtitle')}</p>
         </div>
-        <Link
-          to="/doctors/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          {t('doctors.addDoctor')}
-        </Link>
+        {canManage && (
+          <Link
+            to="/doctors/new"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            {t('doctors.addDoctor')}
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -141,12 +145,16 @@ export default function DoctorsPage() {
                 <Link to={`/doctors/${d.id}`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                   {t('common.view')}
                 </Link>
-                <Link to={`/doctors/${d.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                  {t('common.edit')}
-                </Link>
-                <button type="button" onClick={() => setPendingDelete(d)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
-                  {t('common.delete')}
-                </button>
+                {canManage && (
+                  <>
+                    <Link to={`/doctors/${d.id}/edit`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                      {t('common.edit')}
+                    </Link>
+                    <button type="button" onClick={() => setPendingDelete(d)} className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                      {t('common.delete')}
+                    </button>
+                  </>
+                )}
               </>
           )}
           pagination={{
