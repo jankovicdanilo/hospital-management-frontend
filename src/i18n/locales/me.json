@@ -53,6 +53,11 @@
     "message": "Vaša uloga nema pristup ovoj stranici.",
     "backToDashboard": "Nazad na kontrolnu tablu"
   },
+  "roles": {
+    "admin": "Administrator",
+    "manager": "Menadžer",
+    "doctor": "Ljekar"
+  },
   "doctorNotLinked": {
     "title": "Nalog nije povezan sa ljekarom",
     "message": "Vaš nalog nije povezan sa evidencijom ljekara, tako da termini nisu dostupni. Zamolite administratora da poveže vaš nalog."
@@ -65,6 +70,7 @@
     "procedures": "Procedure",
     "appointments": "Termini",
     "statistics": "Statistika",
+    "users": "Korisnici",
     "logout": "Odjava",
     "footer": "© {{year}} Danilo Janković i Aleksej Kudrjavcev",
     "language": "Jezik"
@@ -86,6 +92,7 @@
     "totalPatients": "Ukupno pacijenata",
     "totalDoctors": "Ukupno ljekara",
     "totalProcedures": "Ukupno procedura",
+    "totalUsers": "Ukupno korisnika",
     "showing": "Prikazano",
     "showingZero": "0 od 0",
     "showingRange": "{{from}}–{{to}} od {{total}}"
@@ -348,5 +355,41 @@
     "visitsOverTimeSubtitle": "Termini po mjesecu",
     "topProceduresTitle": "Najbolje procedure",
     "columnTimesPerformed": "Broj izvršenja"
+  },
+  "users": {
+    "title": "Korisnici",
+    "subtitle": "Upravljajte korisničkim nalozima i ulogama",
+    "addUser": "Dodaj korisnika",
+    "searchPlaceholder": "Pretraga po korisničkom imenu, email-u ili ulozi…",
+    "columnUsername": "Korisničko ime",
+    "columnRole": "Uloga",
+    "noUsersFound": "Nema pronađenih korisnika.",
+    "you": "Vi",
+    "deleteTitle": "Obrisati korisnika?",
+    "deleteBody": "Ovo će trajno ukloniti nalog korisnika <bold>{{name}}</bold> i oduzeti mu pristup. Ova radnja se ne može poništiti.",
+    "appliesNextLoginNotice": "Izmjene uloge i veze sa ljekarom će se primijeniti prilikom sljedeće prijave ovog korisnika."
+  },
+  "userForm": {
+    "addTitle": "Dodaj korisnika",
+    "editTitle": "Izmijeni korisnika",
+    "addSubtitle": "Unesite podatke novog korisničkog naloga.",
+    "editSubtitle": "Ažurirajte korisnički nalog ispod.",
+    "loading": "Učitavanje korisnika…",
+    "notFoundTitle": "Korisnik nije pronađen",
+    "notFoundMessage": "Ovaj korisnik ne postoji ili ga je obrisao neko drugi. Vratite se i ponovo učitajte listu.",
+    "username": "Korisničko ime",
+    "password": "Lozinka",
+    "role": "Uloga",
+    "selectRole": "Izaberite ulogu…",
+    "doctor": "Ljekar",
+    "searchDoctor": "Pretražite ljekara…",
+    "loadingDoctors": "Učitavanje ljekara…",
+    "availableDoctors": "Dostupni ljekari",
+    "allDoctorsLinked": "Svaki ljekar već ima nalog.",
+    "usernameRequired": "Korisničko ime je obavezno.",
+    "passwordRequired": "Lozinka je obavezna.",
+    "roleRequired": "Uloga je obavezna.",
+    "doctorRequired": "Ljekar je obavezan.",
+    "cannotChangeOwnRole": "Ne možete promijeniti svoju sopstvenu ulogu."
   }
 }
