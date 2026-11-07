@@ -53,6 +53,11 @@
     "message": "Your role doesn't have access to this page.",
     "backToDashboard": "Back to Dashboard"
   },
+  "roles": {
+    "admin": "Admin",
+    "manager": "Manager",
+    "doctor": "Doctor"
+  },
   "doctorNotLinked": {
     "title": "Account not linked to a doctor",
     "message": "Your account isn't linked to a doctor record, so appointments aren't available. Ask an administrator to link your account."
@@ -65,6 +70,7 @@
     "procedures": "Procedures",
     "appointments": "Appointments",
     "statistics": "Statistics",
+    "users": "Users",
     "logout": "Log out",
     "footer": "© {{year}} Danilo Jankovic & Aleksei Kudriavtsev",
     "language": "Language"
@@ -86,6 +92,7 @@
     "totalPatients": "Total Patients",
     "totalDoctors": "Total Doctors",
     "totalProcedures": "Total Procedures",
+    "totalUsers": "Total Users",
     "showing": "Showing",
     "showingZero": "0 of 0",
     "showingRange": "{{from}}–{{to}} of {{total}}"
@@ -348,5 +355,41 @@
     "visitsOverTimeSubtitle": "Appointments per month",
     "topProceduresTitle": "Top Procedures",
     "columnTimesPerformed": "Times Performed"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage user accounts and roles",
+    "addUser": "Add User",
+    "searchPlaceholder": "Search by username, email or role…",
+    "columnUsername": "Username",
+    "columnRole": "Role",
+    "noUsersFound": "No users found.",
+    "you": "You",
+    "deleteTitle": "Delete user?",
+    "deleteBody": "This will permanently remove <bold>{{name}}</bold>'s account and revoke their access. This action cannot be undone.",
+    "appliesNextLoginNotice": "The role and doctor link changes will apply the next time this user logs in."
+  },
+  "userForm": {
+    "addTitle": "Add User",
+    "editTitle": "Edit User",
+    "addSubtitle": "Enter the new user's account details.",
+    "editSubtitle": "Update the user's account below.",
+    "loading": "Loading user…",
+    "notFoundTitle": "User not found",
+    "notFoundMessage": "This user doesn't exist, or was deleted by someone else. Go back and refresh the list.",
+    "username": "Username",
+    "password": "Password",
+    "role": "Role",
+    "selectRole": "Select a role…",
+    "doctor": "Doctor",
+    "searchDoctor": "Search for a doctor…",
+    "loadingDoctors": "Loading doctors…",
+    "availableDoctors": "Available doctors",
+    "allDoctorsLinked": "Every doctor already has an account.",
+    "usernameRequired": "Username is required.",
+    "passwordRequired": "Password is required.",
+    "roleRequired": "Role is required.",
+    "doctorRequired": "Doctor is required.",
+    "cannotChangeOwnRole": "You can't change your own role."
   }
 }
