@@ -1,9 +1,14 @@
 import type { TFunction } from 'i18next';
 import type { AppointmentStatus } from '../types/appointment';
 import type { DayOfWeek } from '../types/doctorSchedule';
+import type { Role } from '../types/auth';
 
 export function translateStatus(t: TFunction, status: AppointmentStatus): string {
   return t(`status.${status.toLowerCase()}`);
+}
+
+export function translateRole(t: TFunction, role: Role): string {
+  return t(`roles.${role.toLowerCase()}`);
 }
 
 export function translateDayOfWeek(t: TFunction, day: DayOfWeek): string {

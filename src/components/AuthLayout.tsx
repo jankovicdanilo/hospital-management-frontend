@@ -89,6 +89,18 @@ export default function AuthLayout() {
                         {t('nav.statistics')}
                     </NavLink>
                 )}
+                {permissions.canManageUsers(user.role) && (
+                    <NavLink
+                        to="/users"
+                        className={({ isActive }) =>
+                            `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                        }
+                    >
+                        {t('nav.users')}
+                    </NavLink>
+                )}
             </nav>
           </div>
           <div className="flex items-center gap-4 shrink-0">

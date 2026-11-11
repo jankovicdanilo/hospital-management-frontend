@@ -7,4 +7,5 @@ export const permissions = {
   canViewStatistics: (role: Role) => role === 'Admin' || role === 'Manager',
   canViewInvoices: (role: Role) => role === 'Admin' || role === 'Manager',
   canViewPatientHistory: (role: Role) => role === 'Admin' || role === 'Doctor',
+  canManageUsers: (role: Role) => role === 'Admin',
 };

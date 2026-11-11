@@ -17,6 +17,8 @@ import AppointmentFormPage from './pages/AppointmentFormPage';
 import AppointmentDetailPage from './pages/AppointmentDetailPage';
 import StatisticsPage from './pages/StatisticsPage';
 import DoctorStatisticsDetailPage from './pages/DoctorStatisticsDetailPage';
+import UsersPage from './pages/UsersPage';
+import UserFormPage from './pages/UserFormPage';
 
 function App() {
   return (
@@ -117,6 +119,30 @@ function App() {
               element={
                 <ProtectedRoute allow={['Admin', 'Manager']}>
                   <DoctorStatisticsDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allow={['Admin']}>
+                  <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users/new"
+              element={
+                <ProtectedRoute allow={['Admin']}>
+                  <UserFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users/:id/edit"
+              element={
+                <ProtectedRoute allow={['Admin']}>
+                  <UserFormPage />
                 </ProtectedRoute>
               }
             />

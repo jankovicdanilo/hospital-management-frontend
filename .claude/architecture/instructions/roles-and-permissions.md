@@ -76,7 +76,6 @@ The `errorCode` of a 403 tells the cause:
 
 ## Open points
 
-Both are undecided. Do not build them unless asked:
+Undecided. Do not build it unless asked:
 
 - Managers have no appointment pages, so there is no invoice entry point for them yet.
-- There is no admin page for creating users yet. Accounts are created through the API.

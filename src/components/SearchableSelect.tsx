@@ -15,6 +15,10 @@ interface SearchableSelectProps {
   fetchOptions: (search: string) => Promise<SearchableSelectOption[]>;
   /** Default (pre-search) options shown as soon as the dropdown opens, before the user types anything. */
   fetchPopularOptions?: () => Promise<SearchableSelectOption[]>;
+  /** Heading shown above the `fetchPopularOptions` results; defaults to "Most booked". */
+  popularLabel?: string;
+  /** Message shown when `fetchPopularOptions` resolves to an empty list; defaults to the generic no-results message. */
+  emptyPopularMessage?: string;
   placeholder?: string;
   disabled?: boolean;
   /** Label to show for a pre-selected `value` before any search has run (e.g. when pre-filling an edit form). */
@@ -31,6 +35,8 @@ export default function SearchableSelect({
   onChange,
   fetchOptions,
   fetchPopularOptions,
+  popularLabel,
+  emptyPopularMessage,
   placeholder,
   disabled = false,
   initialLabel,
@@ -250,11 +256,13 @@ export default function SearchableSelect({
               ) : popularError ? (
                 <p className="px-2 py-1.5 text-sm text-red-600">{popularError}</p>
               ) : popularOptions.length === 0 ? (
-                <p className="px-2 py-1.5 text-sm text-gray-400">{t('common.noResultsFound')}</p>
+                <p className="px-2 py-1.5 text-sm text-gray-400">
+                  {emptyPopularMessage ?? t('common.noResultsFound')}
+                </p>
               ) : (
                 <>
                   <p className="px-2 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
-                    {t('searchableSelect.mostBooked')}
+                    {popularLabel ?? t('searchableSelect.mostBooked')}
                   </p>
                   {popularOptions.map((option) => (
                     <button
