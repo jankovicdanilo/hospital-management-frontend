@@ -77,8 +77,13 @@ Frontend env vars pointing at backend services:
 ## Auth
 
 Authenticated requests attach the JWT token as a Bearer token in the
-Authorization header. Token comes from the in-memory auth context —
-never persisted to storage.
+Authorization header. The auth context is the source of truth; it is
+mirrored to `sessionStorage` (key `hospital_session`) so a page reload
+restores the session without a new login. `sessionStorage` clears when
+the tab closes, which is what ends the session along with logout,
+token expiry, and a 401. On load, the stored value is parsed and
+validated (shape and unexpired token) before being trusted — anything
+stale or tampered is discarded and the user sees the login page.
 
 ## Handling inconsistencies between files
 
