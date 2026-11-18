@@ -83,3 +83,10 @@ Success (200): { id: number, username: string, email: string, role: string, doct
 UTC) }
 
 Failure (404): { message: string, errorCode: "USER_NOT_FOUND" }
+
+### GET /version (no login needed)
+
+Success (200): { service: string, version: string, build: string }
+version looks like "1.0.14" and goes up with every deploy. build is the short commit id the deployed images were built from.
+When the backend runs outside the cluster (locally), version is "dev" and build is "local".
+This endpoint is not under /api/auth: each service maps it directly, outside its controllers. The app reads it from the auth service.

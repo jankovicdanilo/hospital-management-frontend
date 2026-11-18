@@ -17,7 +17,9 @@ Add a shared layout for all authenticated pages in this app.
 Requirements:
 - Applies globally to every authenticated route (dashboard and any
   pages added later)
-- Does not apply to the login page, which stays standalone
+- Does not apply to the login page, which stays standalone and shows
+  only the version label (see app-version.md), not the rest of the
+  header/footer
 - Header: the current logged-in user's name, with a logout button in
   the top-right corner
 - Footer: a copyright line crediting Danilo Jankovic and Aleksei Kudriavtsev
