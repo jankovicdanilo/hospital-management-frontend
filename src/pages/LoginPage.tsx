@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import VersionLabel from '../components/VersionLabel';
 import { loginRequest } from '../api/auth';
 import { getErrorMessage } from '../api/apiErrors';
 
@@ -51,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-100">
       <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md">
         <h1 className="text-2xl font-semibold text-gray-800 mb-6">{t('login.signIn')}</h1>
 
@@ -109,6 +110,8 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+
+      <VersionLabel className="text-xs text-gray-400" />
     </div>
   );
 }

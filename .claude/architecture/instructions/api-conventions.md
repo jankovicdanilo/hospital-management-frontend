@@ -3,6 +3,8 @@
 Cross-cutting rules that apply across every service when calling the
 HospitalManagement backend.
 
+- Every backend service answers GET /version without a login, with { service, version, build }. The app shows the one from the auth service.
+
 ## Error responses
 
 All backend failures follow one of two shapes:

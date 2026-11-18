@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import VersionLabel from './VersionLabel';
 import { setLanguage, type Language } from '../i18n';
 import { permissions } from '../auth/permissions';
 
@@ -131,6 +132,7 @@ export default function AuthLayout() {
       <footer className="bg-white border-t border-gray-200">
         <div className="mx-auto max-w-6xl px-6 py-4 text-center text-sm text-gray-500">
           {t('nav.footer', { year: new Date().getFullYear() })}
+          <VersionLabel prefix=" · " />
         </div>
       </footer>
     </div>
